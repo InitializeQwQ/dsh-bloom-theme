@@ -1,4 +1,4 @@
-/** Bloom 设置页的配色、明暗模式与分享控件。 */
+/** Bloom 设置页的配色控件与独立面板。 */
 import { FEATURED_VARIANTS, isNewVariant, PALETTE, VARIANTS } from './palette.js'
 import { resetRotationTimer } from './rotation.js'
 import { readVariant } from './dom.js'
@@ -166,7 +166,7 @@ async function shareInstall(btn: HTMLElement, schedule: (fn: () => void, delay: 
   return ok
 }
 
-function buildModeHTML(inSettings: boolean) {
+function buildModeHTML() {
   return `<div class="dsh-bloom-section" data-mode-section hidden>${tr('模式')}</div>
     <div class="dsh-bloom-appearance" role="group" aria-label="${tr('深浅模式')}" hidden>
       <div class="dsh-bloom-appearance__seg">
@@ -177,20 +177,17 @@ function buildModeHTML(inSettings: boolean) {
               <path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1"/>
             </g>
           </svg>
-          ${inSettings ? `<span>${tr('浅色')}</span>` : ''}
         </button>
         <button type="button" class="dsh-bloom-appearance__btn" data-mode="dark" aria-label="${tr('深色')}" title="${tr('深色')}">
           <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M13.4 10.1A5.9 5.9 0 0 1 5.9 2.6a5.9 5.9 0 1 0 7.5 7.5z" fill="currentColor"/>
           </svg>
-          ${inSettings ? `<span>${tr('深色')}</span>` : ''}
         </button>
         <button type="button" class="dsh-bloom-appearance__btn" data-mode="system" aria-label="${tr('跟随系统')}" title="${tr('跟随系统')}">
           <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
             <rect x="1.6" y="2.6" width="12.8" height="8.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/>
             <path d="M5.6 13.4h4.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           </svg>
-          ${inSettings ? `<span>${tr('跟随系统')}</span>` : ''}
         </button>
       </div>
     </div>`
@@ -221,7 +218,6 @@ export function buildSwitcherHTML(currentVariant, inSettings = false) {
   }).join('')
   if (inSettings) {
     return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}" data-placement="settings" lang="${getLang()}">
-      <section class="dsh-bloom-mode" aria-label="${tr('模式')}">${buildModeHTML(true)}</section>
       <section class="dsh-bloom-palette-section" data-bloom-picker>
         <h3 class="dsh-bloom-group">${tr('配色')}</h3>
         <div class="dsh-bloom-options dsh-bloom-settings-palette" role="listbox" aria-label="${tr('配色')}">${options}</div>
@@ -249,7 +245,7 @@ export function buildSwitcherHTML(currentVariant, inSettings = false) {
     <div class="dsh-bloom-section">${tr('主题')}</div>
     <div class="dsh-bloom-options" role="listbox" aria-label="${tr('配色')}">${options}</div>
     <div class="dsh-bloom-caption" data-caption role="status" aria-live="polite"><span class="dsh-bloom-caption__name" data-caption-name>${variantName(currentVariant)}</span><span class="dsh-bloom-caption__poem" data-caption-poem>${variantPoem(currentVariant)}</span></div>
-    ${buildModeHTML(false)}
+    ${buildModeHTML()}
     <div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>
     <div class="dsh-bloom-more-body" hidden data-open="false" data-instant="true">
       <div class="dsh-bloom-more-inner">
@@ -381,11 +377,7 @@ function rerenderMenu(el: HTMLElement, variant: string) {
     fresh.hidden = cur.hidden
     cur.replaceWith(fresh)
   }
-  const freshMode = holder.querySelector('.dsh-bloom-mode')
-  if (freshMode) {
-    el.querySelector('.dsh-bloom-mode')?.replaceWith(freshMode)
-    el.lang = getLang()
-  }
+  if (el.dataset.placement === 'settings') el.lang = getLang()
   if (moreWasOpen) {
     const more = el.querySelector<HTMLElement>('.dsh-bloom-more')
     const body = el.querySelector<HTMLElement>('.dsh-bloom-more-body')
@@ -896,16 +888,12 @@ export function buildSwitcherEl(initialVariant, inSettings = false) {
   const onOutsideClick = (e: MouseEvent) => {
     if (!el.contains(e.target as Node)) closeMenu(el)
   }
-  if (!inSettings) document.addEventListener('click', onOutsideClick)
-  syncAppearanceRow(el)
-
-  // 外观变化（宿主 theme/change，或本地 setMode）→ 刷新模式行选中态与氛围层。
-  // 2026-11-21 · owner：「深色浅色跟随系统，这太垃圾了」——
-  // 之前面板只在打开时同步一次，系统切换深浅后面板里的 ☀/🌙/🖥 还是旧的。
-  const offAppearance = onAppearanceChange(() => {
-    if (disposed) return
+  let offAppearance: (() => void) | undefined
+  if (!inSettings) {
+    document.addEventListener('click', onOutsideClick)
     syncAppearanceRow(el)
-  })
+    offAppearance = onAppearanceChange(() => syncAppearanceRow(el))
+  }
 
   switcherCleanups.set(el, () => {
     disposed = true
@@ -916,7 +904,7 @@ export function buildSwitcherEl(initialVariant, inSettings = false) {
     timers.clear()
     window.removeEventListener(LANG_CHANGE_EVENT, onLanguageChange)
     document.removeEventListener('click', onOutsideClick)
-    offAppearance()
+    offAppearance?.()
     // 定位用的监听与内联样式一起回收：插件停用后页面必须干净
     cancelAnimationFrame(repositionFrame)
     window.removeEventListener('resize', onViewportChange)

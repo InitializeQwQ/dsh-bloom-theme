@@ -108,13 +108,13 @@ paste directly, which locates problems better than a screenshot.
 
 ## Colors look different than expected
 
-Each of the 12 palettes in the main menu has a light and a dark variant. "Appearance" in the panel lets you
-choose light, dark or follow system separately. If switching does not change the interface, check whether
+Each Bloom palette has a light and a dark variant. Use the DSH appearance setting to choose light, dark or
+follow system. If switching does not change the interface, check whether
 the current palette setting was remembered from last time, then switch manually again.
 
 ## Change the glass material
 
-Open **Settings → Bloom**. In **Material**, choose frosted, matte or liquid glass and set **Transparent input box** independently. Use **Theme** to change the palette and **Mode** to select light, dark or follow system.
+Open **Settings → Bloom**. In **Material**, choose frosted, matte or liquid glass and set **Transparent input box** independently. Use **Palette** on the same page to change the palette.
 
 When the system requests reduced transparency, the automatic default uses a solid background. If you explicitly select one of the three materials, reduced transparency alone does not override that selection. Forced colors or high contrast take precedence and use a solid background. `glassMode` in diagnostics is the saved preference and may differ from the effective appearance.
 

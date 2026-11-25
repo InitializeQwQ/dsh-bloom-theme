@@ -98,8 +98,7 @@ async function setupPage(t) {
     }
     return route.fulfill({ status: 404, body: '' })
   })
-  await page.goto('https://bloom.test/')
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
     const dicts = {}
     const listeners = new Set()
     window.mockLocale = {
@@ -109,12 +108,27 @@ async function setupPage(t) {
       bind(ns) { return (key) => dicts[ns]?.[this.active]?.[key] ?? key },
       subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn) },
     }
+    const systemTheme = matchMedia('(prefers-color-scheme: dark)')
     window.mockTheme = {
       preference: 'dark',
-      getTheme: () => ({ preference: 'dark', active: { colorScheme: 'dark' } }),
-      setTheme: (val) => {},
+      getTheme() {
+        const colorScheme = this.preference === 'system'
+          ? (systemTheme.matches ? 'dark' : 'light')
+          : this.preference
+        return { preference: this.preference, active: { colorScheme } }
+      },
+      setTheme(preference) {
+        this.preference = preference
+        const snapshot = this.getTheme()
+        document.body.toggleAttribute('data-ds-dark-theme', snapshot.active.colorScheme === 'dark')
+        for (const listener of window.__events?.['theme/change'] ?? []) listener(snapshot)
+      },
     }
+    systemTheme.addEventListener('change', () => {
+      if (window.mockTheme.preference === 'system') window.mockTheme.setTheme('system')
+    })
   })
+  await page.goto('https://bloom.test/')
   await page.addScriptTag({ content: outputFiles[0].text })
   return page
 }
@@ -188,7 +202,11 @@ test('Bloom renders its appearance controls only in the settings slot', async t 
 test('inline palette cards share settings styling and support keyboard selection in a narrow window', async t => {
   const page = await setupPage(t)
   await page.setViewportSize({ width: 360, height: 420 })
-  await page.evaluate(() => window.applyModule(window.mockLocale))
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.evaluate(() => {
+    window.mockTheme.setTheme('light')
+    window.applyModule(window.mockLocale, window.mockTheme)
+  })
   await mountSettings(page)
   const settings = page.locator('[data-fixture-settings]')
   const listbox = settings.getByRole('listbox')
@@ -211,11 +229,8 @@ test('inline palette cards share settings styling and support keyboard selection
   const unselected = listbox.getByRole('option', { selected: false }).first()
   const settingRow = settings.locator('.dsh-bloom-detail .dsh-bloom-row').first()
   assert.deepEqual(await readCard(unselected), await readCard(settingRow))
-  const modeGroup = settings.locator('.dsh-bloom-mode').getByRole('group')
-  assert.equal(await palette.locator('[data-mode]').count(), 0)
+  assert.equal(await settings.locator('.dsh-bloom-mode, .dsh-bloom-appearance, [data-mode]').count(), 0)
   assert.equal(await settings.locator('.dsh-bloom-menu, .dsh-bloom-foot, .dsh-bloom-more-body').count(), 0)
-  assert.ok((await modeGroup.boundingBox()).y < (await listbox.boundingBox()).y)
-  assert.deepEqual(await modeGroup.getByRole('button').locator('span').allTextContents(), ['浅色', '深色', '跟随系统'])
   const initial = await active.getAttribute('data-variant')
   await active.focus()
   await page.keyboard.press('ArrowRight')
@@ -226,18 +241,17 @@ test('inline palette cards share settings styling and support keyboard selection
   await page.waitForFunction(v => document.body.dataset.bloomVariant === v, next)
   assert.equal(await active.getAttribute('data-variant'), next)
   assert.equal(await listbox.isVisible(), true)
-  await page.keyboard.press('Shift+Tab')
-  assert.equal(await modeGroup.locator('[data-mode="system"]:focus').count(), 1)
-  const light = modeGroup.locator('[data-mode="light"]')
-  const dark = modeGroup.locator('[data-mode="dark"]')
-  const system = modeGroup.locator('[data-mode="system"]')
-  await light.press('Space')
-  assert.equal(await light.getAttribute('aria-pressed'), 'true')
-  await dark.click()
-  assert.equal(await dark.getAttribute('aria-pressed'), 'true')
-  await system.click()
-  assert.equal(await system.getAttribute('aria-pressed'), 'true')
-  assert.equal(await active.getAttribute('data-variant'), next, 'changing the display mode keeps the palette')
+  const swatchColor = () => active.locator('.dsh-bloom-option__dot').evaluate(dot => getComputedStyle(dot).backgroundColor)
+  const lightColor = await swatchColor()
+  await page.evaluate(() => window.mockTheme.setTheme('dark'))
+  const darkColor = await swatchColor()
+  assert.notEqual(darkColor, lightColor)
+  await page.evaluate(() => window.mockTheme.setTheme('system'))
+  assert.equal(await swatchColor(), lightColor)
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.waitForFunction(() => document.body.hasAttribute('data-ds-dark-theme'))
+  assert.equal(await swatchColor(), darkColor)
+  assert.equal(await active.getAttribute('data-variant'), next, 'changing the host appearance keeps the palette')
 })
 
 test('saved rotation starts with the theme even when settings have not opened', async t => {
@@ -370,9 +384,9 @@ test('teardown cancels and prevents timers or observers from executing or leakin
 
 test('material and per-scheme backgrounds remain independent through UI changes and reload', async t => {
   const page = await setupPage(t)
-  await page.evaluate(() => window.applyModule(window.mockLocale))
+  await page.evaluate(() => window.applyModule(window.mockLocale, window.mockTheme))
   await mountSettings(page)
-  const modes = page.locator('.dsh-bloom-mode')
+  const setHostTheme = mode => page.evaluate(mode => window.mockTheme.setTheme(mode), mode)
   const state = () => page.evaluate(() => ({
     dark: document.body.hasAttribute('data-ds-dark-theme'),
     material: document.body.dataset.bloomGlass,
@@ -382,23 +396,23 @@ test('material and per-scheme backgrounds remain independent through UI changes 
   // 质感三选一：2026-11-21 设置页改版后文字进了 aria-label，按标签断言。
   assert.deepEqual(await page.locator('.dsh-bloom-detail [data-glass]').evaluateAll(
     els => els.map(el => el.getAttribute('aria-label'))), ['毛玻璃', '磨砂玻璃', '液态玻璃'])
-  await modes.locator('[data-mode="light"]').click()
+  await setHostTheme('light')
   await page.locator('.dsh-bloom-detail [data-glass="matte"]').click()
   await page.locator('.dsh-bloom-detail [data-scheme="light"] [data-preset="wash"]').click()
   assert.deepEqual(await state(), { dark: false, material: 'matte', light: 'wash', darkBackground: 'corner' })
-  await modes.locator('[data-mode="dark"]').click()
+  await setHostTheme('dark')
   await page.locator('.dsh-bloom-detail [data-scheme="dark"] [data-preset="galaxy"]').click()
   assert.deepEqual(await state(), { dark: true, material: 'matte', light: 'wash', darkBackground: 'galaxy' })
-  await modes.locator('[data-mode="light"]').click()
+  await setHostTheme('light')
   assert.deepEqual(await state(), { dark: false, material: 'matte', light: 'wash', darkBackground: 'galaxy' })
   await page.locator('.dsh-bloom-detail [data-glass="liquid"]').click()
-  await modes.locator('[data-mode="dark"]').click()
+  await setHostTheme('dark')
   assert.deepEqual(await state(), { dark: true, material: 'liquid', light: 'wash', darkBackground: 'galaxy' })
   await page.reload()
   await page.addScriptTag({ content: outputFiles[0].text })
-  await page.evaluate(() => window.applyModule())
+  await page.evaluate(() => window.applyModule(window.mockLocale, window.mockTheme))
   assert.deepEqual(await state(), { dark: true, material: 'liquid', light: 'wash', darkBackground: 'galaxy' })
   await mountSettings(page)
-  await modes.locator('[data-mode="light"]').click()
+  await setHostTheme('light')
   assert.deepEqual(await state(), { dark: false, material: 'liquid', light: 'wash', darkBackground: 'galaxy' })
 })

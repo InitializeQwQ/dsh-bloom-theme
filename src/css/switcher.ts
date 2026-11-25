@@ -654,39 +654,9 @@ body[data-ds-dark-theme] .dsh-bloom-option__dot { background: var(--bloom-swatch
   text-overflow: ellipsis;
 }
 
-.dsh-bloom-mode {
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--bloom-hairline);
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-layer-2);
-}
-.dsh-bloom-mode > .dsh-bloom-section,
-.dsh-bloom-mode > .dsh-bloom-appearance { padding: 0; }
-.dsh-bloom-mode > .dsh-bloom-section {
-  color: var(--dsw-alias-label-primary, #222);
-  font-size: 14px;
-  font-weight: 600;
-}
-.dsh-bloom-mode .dsh-bloom-appearance__seg { box-sizing: border-box; }
-.dsh-bloom-mode .dsh-bloom-appearance__btn {
-  flex-wrap: wrap;
-  gap: 4px 5px;
-  min-width: 0;
-  min-height: 36px;
-  padding: 5px;
-  line-height: 1.25;
-  white-space: normal;
-}
-.dsh-bloom-mode .dsh-bloom-appearance__icon { flex: none; }
-@media (pointer: coarse) {
-  .dsh-bloom-mode .dsh-bloom-appearance__btn { min-height: 44px; }
-}
 @media (forced-colors: active) {
   .dsh-bloom-option__dot { forced-color-adjust: none; }
-  .dsh-bloom-settings-palette .dsh-bloom-option[data-active="true"],
-  .dsh-bloom-mode .dsh-bloom-appearance__btn[data-active="true"] {
+  .dsh-bloom-settings-palette .dsh-bloom-option[data-active="true"] {
     outline: 1px solid Highlight;
     outline-offset: -1px;
   }

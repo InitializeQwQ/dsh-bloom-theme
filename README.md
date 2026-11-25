@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/1aa807f5-e65d-4e9f-aef4-d46b71a04a62
 
 ### 安装
 
-在 DeepSeek Harness 的「插件」里搜索 **`dsh-bloom-theme`** 并安装。按提示重启后，打开 **设置 → Bloom**，即可切换配色、明暗模式，并在「质感」分组开关输入框透明效果。实色输入框也保留选定的材质纹理和反光。
+在 DeepSeek Harness 的「插件」里搜索 **`dsh-bloom-theme`** 并安装。按提示重启后，打开 **设置 → Bloom** 切换配色，或在「质感」分组开关输入框透明效果。Bloom 的明暗模式跟随 DSH 的外观设置。实色输入框也保留选定的材质纹理和反光。
 
 本地迭代当前工作区时，一条命令即可构建并装入默认的 `desktop` profile：
 
