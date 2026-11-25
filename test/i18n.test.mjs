@@ -42,6 +42,9 @@ const { outputFiles } = await build({
     window.bloomTest.applyWithLocale = () => {
       const mod = window.__ModuleLoader__?._module
       mod?.apply(strictCtx({ locale: window.__dshLocale, slots: window.fixtureSlots }, mod.inject ?? []))
+      document.body.append(switcher.buildSwitcherEl(document.body.dataset.bloomVariant))
+      version.refreshUpdateBadge()
+      void version.checkDshLatest()
     };`,
     resolveDir: fileURLToPath(new URL('..', import.meta.url)) },
   bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2020',

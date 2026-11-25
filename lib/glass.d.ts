@@ -6,6 +6,10 @@ export type GlassMode = 'auto' | GlassMaterial;
 export type EffectiveGlassMode = GlassMaterial | 'solid';
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
 export declare const GLASS_MODES: GlassMaterial[];
+/** Existing profiles keep the glass input surface until the user switches it off. */
+export declare function readComposerTransparency(): boolean;
+export declare function applyComposerTransparency(): void;
+export declare function writeComposerTransparency(transparent: boolean): void;
 /** 读取并解析旧值；不在读取时写入存储。 */
 export declare function readGlassMode(): GlassMode;
 /** 保存标准材质 ID；存储不可用时仍保留本次会话选择。 */

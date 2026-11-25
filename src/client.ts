@@ -39,10 +39,11 @@ import { SURFACES_CSS } from './css/surfaces.js'
 import { applyMotion, injectCSS, readMotion, readVariant, watchThinkTags } from './dom.js'
 import { initAppearanceSync, bindHostTheme, notifyAppearanceChange, type HostThemeService } from './appearance.js'
 import { applyThemeTokens, type HostThemeTokenService } from './theme-tokens.js'
-import { onVariantChange, SWITCHER_CSS } from './switcher.js'
+import { applyVariant, onVariantChange, SWITCHER_CSS } from './switcher.js'
+import { startRotation } from './rotation.js'
 import { initAmbience } from './ambience.js'
-import { initGlassMode } from './glass.js'
-import { createBloomComponents, type HostReact } from './ui.js'
+import { applyComposerTransparency, initGlassMode } from './glass.js'
+import { createBloomDecorations, type HostReact } from './ui.js'
 import { registerBloomSettings } from './settings.js'
 import { initTypingGlow } from './typing.js'
 import { checkUpdate, setVersionUpdatesActive } from './version.js'
@@ -97,10 +98,11 @@ function installSkin(): () => void {
     injectCSS(COMPONENT_CSS, 'components.css')
     injectCSS(GLASS_CSS + BACKGROUND_CSS + BUTTON_CSS, 'glass.css')
     injectCSS(ADAPTIVE_CSS + SURFACES_CSS, 'adaptive.css')
-    // Settings can open before the conversation header mounts its switcher.
     injectCSS(SWITCHER_CSS, 'switcher.css')
     document.body.dataset.bloomVariant = variant
+    startRotation(applyVariant)
     applyMotion(readMotion())
+    applyComposerTransparency()
     initAppearanceSync()
     initAmbience()
     window.__dshBloomGlassOff__ ??= initGlassMode()
@@ -664,7 +666,7 @@ window.__ModuleLoader__.load({
   id: PLUGIN_ID,
   factory: (require: (name: string) => unknown) => {
     const React = require('react') as HostReact
-    const { Switcher, Decorations } = createBloomComponents(React, installUpdateCheck)
+    const Decorations = createBloomDecorations(React, installUpdateCheck)
     const exports: Record<string, unknown> = {}
     Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
     exports.inject = ['slots']
@@ -693,29 +695,9 @@ window.__ModuleLoader__.load({
       })
       ctx.effect(() => installSkin(), 'dsh-bloom-theme: skin')
       bindBloomInspect(ctx)
-      // 切换器的座位（2026-11-21 修正）。
-      //
-      // #113 当初把它挂在 `conversation.session.header.corner`（页头最右角落），
-      // 但那个 seat 是 **single** slot —— 宿主的 client-ui-sidebar-right
-      // ExpandButton 已经占了它，插件再注册就会抛：
-      //   single slot "conversation.session.header.corner" already has a
-      //   registration at priority 0 (registered by WC)
-      // 官方契约也写明 single seat 是「一个控件」的独占位，插件不该 shadow
-      // 宿主自带 UI（replaceRisk: 'shadows-shipped-ui'）。
-      //
-      // 正确座位是 `conversation.session.header.utilities` —— **list** slot
-      //（additive）：页头右侧的官方 utilities 区，给一个自己的 id 就是
-      // 「在官方条目旁边加一个」，不会挤掉任何宿主 UI。
-      ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
-        name: 'conversation.session.header.utilities',
-        id: 'dsh-bloom-theme.switcher',
-        order: 100,
-        label: 'Bloom',
-      }, Switcher))
       ctx.slots.inject('shell.overlay', () => ctx.slots.register({
         name: 'shell.overlay', id: 'dsh-bloom-theme.decorations', order: -100,
       }, Decorations))
-      // 设置 › Bloom 外观：质感/背景/流星/自动换色/动效 从下拉迁到这里（#settings-migration）
       registerBloomSettings(ctx as never, LOCALE_NS, React)
       ctx.effect?.(() => initTypingGlow(), 'dsh-bloom-theme: typing glow')
     }

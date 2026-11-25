@@ -67,21 +67,23 @@ function setupMockEnvironment(elements = {}) {
   const platEl = elements.platEl ?? createMockElement()
   const refreshBtn = elements.refreshBtn ?? createMockElement()
   const copyBtn = elements.copyBtn ?? createMockElement()
+  const versionControls = {
+    '[data-dsh-current]': curEl,
+    '[data-dsh-latest]': latEl,
+    '[data-dsh-state]': stEl,
+    '[data-dsh-hint]': hintEl,
+    '[data-dsh-platform]': platEl,
+    '[data-act="refresh"]': refreshBtn,
+    '[data-act="copy"]': copyBtn,
+  }
+  root.querySelector = selector => versionControls[selector] ?? null
 
   globalThis.window = globalThis
   globalThis.document = {
     documentElement: { dataset: {} },
     body: { dataset: {} },
     querySelector(sel) {
-      if (sel.includes('.dsh-bloom-dsh-update')) return root
-      if (sel.includes('[data-dsh-current]')) return curEl
-      if (sel.includes('[data-dsh-latest]')) return latEl
-      if (sel.includes('[data-dsh-state]')) return stEl
-      if (sel.includes('[data-dsh-hint]')) return hintEl
-      if (sel.includes('[data-dsh-platform]')) return platEl
-      if (sel.includes('[data-act="refresh"]')) return refreshBtn
-      if (sel.includes('[data-act="copy"]')) return copyBtn
-      return null
+      return sel === '.dsh-bloom-dsh-update' ? root : null
     },
     querySelectorAll() { return [] },
   }

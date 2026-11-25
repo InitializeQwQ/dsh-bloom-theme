@@ -56,7 +56,6 @@ ${scope(s, SURFACES)} {
 ${scope(s, FLOATING)} {
   background-color: color-mix(in oklch, ${layer} ${matte ? '78%' : '86%'}, transparent);
 }
-${s} .dsh-bloom-menu { position: absolute; }
 ${s} [class*="_sidebarCol"]::before,
 ${s} header[class*="_header"]::before {
   /* #125: 同 liquid —— 面板贴边、圆角继承宿主，不再做悬空卡片。 */

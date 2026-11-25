@@ -11,13 +11,13 @@ const { outputFiles } = await build({
   stdin: {
     contents: `import './test/slot-fixture.mjs';
       import * as React from 'react';
-      import { createBloomComponents } from './src/ui.ts';
+      import { createBloomDecorations } from './src/ui.ts';
       import { buildSparkles } from './src/starlight.ts';
       import { GLASS_CSS } from './src/css/glass.ts';
       import { BACKGROUND_CSS } from './src/css/background.ts';
       import { COMPONENT_CSS } from './src/css/component.ts';
       import { initAmbience, writeAmbience, readAmbience, clearAmbience } from './src/ambience.ts';
-      const { Decorations } = createBloomComponents(React, () => () => {});
+      const Decorations = createBloomDecorations(React, () => () => {});
       const layerState = () => {
         const el = document.getElementById('dsh-bloom-sparkles');
         const r = el.getBoundingClientRect(), cs = getComputedStyle(el);

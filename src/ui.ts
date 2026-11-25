@@ -1,4 +1,3 @@
-import { mountSwitcher } from './switcher.js'
 import { buildSparkles } from './starlight.js'
 import { buildLiquidLens } from './liquid-lens.js'
 import { buildFogDefinitions } from './fog.js'
@@ -10,29 +9,9 @@ export interface HostReact {
   useEffect(setup: () => void | (() => void), deps: unknown[]): void
 }
 
-/** Both containers belong to Bloom's Slots. The menu escapes clipped host headers. */
-export function createBloomComponents(React: HostReact, installUpdateCheck: (host: HTMLElement) => () => void) {
-  let overlay: HTMLElement | null = null
-  const onOverlayChange = new Set<() => void>()
-
-  function Switcher() {
-    const anchor = React.useRef<HTMLDivElement | null>(null)
-    React.useEffect(() => {
-      let dispose: (() => void) | undefined
-      const sync = () => {
-        dispose?.()
-        dispose = overlay && anchor.current ? mountSwitcher(overlay, anchor.current) : undefined
-      }
-      onOverlayChange.add(sync)
-      sync()
-      return () => { onOverlayChange.delete(sync); dispose?.() }
-    }, [])
-    return React.createElement('div', {
-      ref: anchor, className: 'dsh-bloom-slot', 'data-bloom-slot': 'switcher', 'aria-hidden': true,
-    })
-  }
-
-  function Decorations() {
+/** Shell overlay for decorations and the update notice. */
+export function createBloomDecorations(React: HostReact, installUpdateCheck: (host: HTMLElement) => () => void) {
+  return function Decorations() {
     const host = React.useRef<HTMLDivElement | null>(null)
     React.useEffect(() => {
       const container = host.current
@@ -42,11 +21,7 @@ export function createBloomComponents(React: HostReact, installUpdateCheck: (hos
       const fog = buildFogDefinitions(container.ownerDocument)
       container.append(lens, fog, sparkles)
       const stopUpdates = installUpdateCheck(container)
-      overlay = container
-      onOverlayChange.forEach((sync) => sync())
       return () => {
-        overlay = null
-        onOverlayChange.forEach((sync) => sync())
         stopUpdates()
         sparkles.remove()
         lens.remove()
@@ -55,6 +30,4 @@ export function createBloomComponents(React: HostReact, installUpdateCheck: (hos
     }, [])
     return React.createElement('div', { ref: host, className: 'dsh-bloom-overlay', 'data-bloom-slot': 'decorations' })
   }
-
-  return { Switcher, Decorations }
 }

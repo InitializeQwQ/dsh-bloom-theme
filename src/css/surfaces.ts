@@ -60,6 +60,11 @@ ${scope('::before')} {
   backdrop-filter: var(--bloom-surface-filter);
   -webkit-backdrop-filter: var(--bloom-surface-filter);
 }
+${ROOT}[data-bloom-composer-opaque] div[class*="_composer"] div[class*="_card"] {
+  --bloom-surface-fill: var(--dsw-alias-bg-layer-1, #fff);
+  --bloom-surface-filter: none;
+  --bloom-surface-image: none;
+}
 ${scope(':hover')},
 ${scope(':focus-within')} { border-color: transparent; box-shadow: none; }
 ${ROOT} div[class*="_bubble"] { backdrop-filter: none; -webkit-backdrop-filter: none; }

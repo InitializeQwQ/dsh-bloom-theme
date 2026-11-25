@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/1aa807f5-e65d-4e9f-aef4-d46b71a04a62
 
 | 15 palettes · 12 featured | ≥ 4.5:1 | Zero runtime dependencies |
 | :-- | :-- | :-- |
-| Chinese-inspired Morandi colours, each with light and dark variants | All 30 light and dark accent/background pairs pass the 4.5:1 contrast check | No runtime dependencies; switch from the top bar |
+| Chinese-inspired Morandi colours, each with light and dark variants | All 30 light and dark accent/background pairs pass the 4.5:1 contrast check | No runtime dependencies. Switch palettes in Settings. |
 
 - **Colour that stays easy on the eyes.** OKLCH tuning separates readable text and button colours from softer ambience; panels, composer and background change together.
 - **Make the glass yours.** Choose liquid, frosted or matte glass. Light and dark backgrounds remember their own settings; Starry Sky brings theme-coloured stars and meteors to the night.
@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/1aa807f5-e65d-4e9f-aef4-d46b71a04a62
 
 ### Install
 
-Search **`dsh-bloom-theme`** in DeepSeek Harness "Plugins", install, and restart when prompted. Then click the theme button in the top bar and start matching.
+Search for **`dsh-bloom-theme`** in DeepSeek Harness Plugins, install it, and restart when prompted. Open **Settings → Bloom** to select a palette and light or dark mode. Use **Transparent input box** under **Material** to control the composer background.
 
 For local iteration, build the current worktree and install it into the default `desktop` profile with one command:
 

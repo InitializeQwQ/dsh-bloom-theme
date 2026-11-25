@@ -440,17 +440,18 @@ export async function checkDshLatest(force = false): Promise<void> {
   return dshCheckPromise
 }
 
-/** 把宿主版本和对应更新通道渲染到下拉区块；绑按钮事件。 */
+/** 在 Bloom 设置的版本区显示宿主版本和更新通道。 */
 export function renderDshUpdate() {
   if (!versionUpdatesActive) return
   const generation = versionGeneration
   const root = document.querySelector<HTMLElement>('.dsh-bloom-dsh-update')
-  const curEl = document.querySelector<HTMLElement>('[data-dsh-current]')
-  const latEl = document.querySelector<HTMLElement>('[data-dsh-latest]')
-  const stEl = document.querySelector<HTMLElement>('[data-dsh-state]')
-  const hintEl = document.querySelector<HTMLElement>('[data-dsh-hint]')
-  const platEl = document.querySelector<HTMLElement>('[data-dsh-platform]')
-  if (!root || !curEl || !latEl || !stEl || !hintEl) return
+  if (!root) return
+  const curEl = root.querySelector<HTMLElement>('[data-dsh-current]')
+  const latEl = root.querySelector<HTMLElement>('[data-dsh-latest]')
+  const stEl = root.querySelector<HTMLElement>('[data-dsh-state]')
+  const hintEl = root.querySelector<HTMLElement>('[data-dsh-hint]')
+  const platEl = root.querySelector<HTMLElement>('[data-dsh-platform]')
+  if (!curEl || !latEl || !stEl || !hintEl) return
 
   const runtime = readDshRuntimeInfo()
   const cur = runtime.currentVersion || runtime.buildRev || '?'
@@ -480,8 +481,8 @@ export function renderDshUpdate() {
     }
   }
 
-  const btnRefresh = document.querySelector<HTMLButtonElement>('[data-act="refresh"]')
-  const btnCopy = document.querySelector<HTMLButtonElement>('[data-act="copy"]')
+  const btnRefresh = root.querySelector<HTMLButtonElement>('[data-act="refresh"]')
+  const btnCopy = root.querySelector<HTMLButtonElement>('[data-act="copy"]')
 
   if (runtime.updateManagedBy) {
     root.dataset.updateManagedBy = runtime.updateManagedBy

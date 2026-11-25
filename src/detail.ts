@@ -1,8 +1,7 @@
 /**
  * 细节配置行 —— 设置页「Bloom 外观」（settings.section）专属内容。
  *
- * 下拉菜单只留「主题 + 模式」，细节配置（质感、背景氛围、流星、自动换色、动效、
- * 版本与更新、诊断、遥测、分享）全部收敛到这里。
+ * 配色和模式在同一设置页的外观选择器中。这里提供材质、背景、流星、自动换色和动效。
  *
  * 事件委托按容器绑定（不是绑死 switcher 根），同一套 HTML 在测试夹具或
  * 设置页里都能跑；状态同步函数从 switcher 复用，避免两处漂移。
@@ -16,6 +15,7 @@
  */
 const ICON = {
   glass: '<path d="M2.6 5.2h10.8M2.6 8h10.8M2.6 10.8h10.8M4.6 2.6v10.8M8 2.6v10.8M11.4 2.6v10.8" stroke="currentColor" stroke-width="1" opacity=".85"/>',
+  input: '<rect x="2.1" y="4" width="11.8" height="8" rx="2"/><path d="M5 8h4m2 0h.1"/>',
   matte: '<rect x="2.4" y="3.4" width="11.2" height="9.2" rx="2" fill="currentColor" opacity=".22"/><rect x="2.4" y="3.4" width="11.2" height="9.2" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>',
   liquid: '<path d="M8 2.2c2.2 2.6 3.6 4.4 3.6 6a3.6 3.6 0 1 1-7.2 0c0-1.6 1.4-3.4 3.6-6z" fill="currentColor" opacity=".85"/>',
   background: '<rect x="2.2" y="3.2" width="11.6" height="9.6" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.2 10.2 5.4 7l2.6 2.4 2.2-1.8 3.6 3" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>',
@@ -93,7 +93,9 @@ import { applyMotion, readMotion } from './dom.js'
 import {
   effectiveGlassMode,
   GLASS_MODES,
+  readComposerTransparency,
   readGlassMode,
+  writeComposerTransparency,
   writeGlassMode,
   type GlassMaterial,
 } from './glass.js'
@@ -166,11 +168,13 @@ export function buildDetailRowsHTML(): string {
   const meteorDensity = readMeteorDensity()
   const meteorSpeed = readMeteorSpeed()
   const motionOn = readMotion()
+  const transparencyLabel = tr('输入框透明')
 
   return `${groupTitle(tr('质感'))}
     <div class="dsh-bloom-group__body">
       ${row('glass', tr('材质'), `<span class="dsh-bloom-icon-seg" role="radiogroup" aria-label="${tr('质感')}">${glassChoices}</span>`)}
       <p class="dsh-bloom-hint" data-glass-hint hidden></p>
+      ${row('input', transparencyLabel, `<button type="button" class="dsh-bloom-composer-switch" role="switch" aria-label="${transparencyLabel}" aria-checked="${readComposerTransparency()}" data-composer-transparency></button>`)}
     </div>
     ${groupTitle(tr('背景'))}
     <div class="dsh-bloom-group__body">
@@ -249,6 +253,13 @@ export function bindDetailEvents(el: HTMLElement): () => void {
     const target = e.target as HTMLElement
     const tracked = target.closest<HTMLElement>('[data-track]')
     if (tracked?.dataset.track) track(tracked.dataset.track as PanelEvent)
+    const composerSwitch = target.closest<HTMLButtonElement>('[data-composer-transparency]')
+    if (composerSwitch) {
+      const transparent = !readComposerTransparency()
+      writeComposerTransparency(transparent)
+      composerSwitch.setAttribute('aria-checked', String(transparent))
+      return
+    }
     const meteorBtn = target.closest<HTMLButtonElement>('[data-meteor-color]')
     if (meteorBtn) {
       const mode = meteorBtn.dataset.meteorColor

@@ -7,10 +7,11 @@ import { fileURLToPath } from 'node:url'
 const { outputFiles } = await build({
   stdin: {
     contents: `import { buildSwitcherEl, applyVariant } from './src/switcher.ts';
+      import { startRotation } from './src/rotation.ts';
       import { buildDetailEl } from './src/detail.ts';
       import { SWITCHER_CSS } from './src/css/switcher.ts';
       import { FEATURED_VARIANTS, PALETTE_GROUPS, VARIANTS } from './src/palette.ts';
-      window.fixture = { buildSwitcherEl, applyVariant, buildDetailEl, SWITCHER_CSS, FEATURED_VARIANTS, PALETTE_GROUPS, VARIANTS };`,
+      window.fixture = { buildSwitcherEl, applyVariant, startRotation, buildDetailEl, SWITCHER_CSS, FEATURED_VARIANTS, PALETTE_GROUPS, VARIANTS };`,
     resolveDir: fileURLToPath(new URL('..', import.meta.url)),
   }, bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2020',
 })
@@ -32,6 +33,7 @@ async function setup(t, saved = 'mist') {
     localStorage.setItem('dsh-bloom-variant', variant)
     const s = document.createElement('style'); s.textContent = window.fixture.SWITCHER_CSS; document.head.append(s)
     window.fixture.applyVariant(variant)
+    window.fixture.startRotation(window.fixture.applyVariant)
     document.body.append(window.fixture.buildSwitcherEl(variant), window.fixture.buildDetailEl())
   }, saved)
   return page
@@ -139,7 +141,7 @@ test('rotation excludes the live palette when storage still contains an older ch
   await page.waitForFunction(previous => document.body.dataset.bloomVariant !== previous, next)
 })
 
-test('rebuilding a session header preserves the remaining rotation interval', async t => {
+test('rebuilding a palette selector preserves the remaining rotation interval', async t => {
   const page = await setup(t)
   await page.locator('.dsh-bloom-trigger').click()
   await page.locator('.dsh-bloom-detail .dsh-bloom-rotation__select').selectOption('5')

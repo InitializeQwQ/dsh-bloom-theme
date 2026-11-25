@@ -1,26 +1,12 @@
-/**
- * 「Bloom 外观」设置页 —— settings.section 槽位的 React 壳。
- *
- * 下拉菜单只留「主题 + 模式 + 设置入口」，细节配置（质感、背景、流星、自动换色、
- * 动效）收敛进 DSH 设置的「Bloom 外观」页。
- *
- * 这套 DOM 是给设置面板重写的（不是把下拉的行搬过来）：
- *   - 下拉是窄栏、控件紧贴标题；设置页是宽栏，标题在上、控件右对齐
- *   - 分组用卡片 + 组标题，视觉基线见 AGENTS.md「干净、通透、耐看，正文优先」
- *   - 侧栏图标走 settings.section.icon 槽（注册 id 必须等于 section id）
- */
+/** 「Bloom 外观」设置页的 settings.section 和 settings.section.icon 槽位。 */
 import { buildDetailRowsHTML, bindDetailEvents } from './detail.js'
+import { mountSwitcher } from './switcher.js'
 import { LANG_CHANGE_EVENT, tr } from './lang.js'
 import { bloomIconSVG } from './bloom-icon.js'
 import type { HostReact } from './ui.js'
 
 /** 设置节 id —— settings.section 与 settings.section.icon 共用它。 */
 export const BLOOM_SECTION_ID = 'dsh-bloom-theme.appearance'
-
-export function buildDetailHTML(): string {
-  // more/foot（版本与更新、分享）保留在下拉里，设置页只放细节行，避免 DOM 重复
-  return buildDetailRowsHTML()
-}
 
 interface SlotsLike {
   inject: (name: string, fn: () => unknown) => unknown
@@ -88,23 +74,29 @@ export function createBloomIcon(React: HostReact) {
  */
 export function createBloomSettings(React: HostReact) {
   return function BloomAppearance() {
-    const ref = React.useRef<HTMLElement | null>(null)
+    const chooserRef = React.useRef<HTMLDivElement | null>(null)
+    const detailRef = React.useRef<HTMLDivElement | null>(null)
     React.useEffect(() => {
-      const el = ref.current
-      if (!el) return
-      const rebuild = () => {
-        el.innerHTML = buildDetailHTML()
-        ;(el as HTMLElement & { rebuildDetail?: () => void }).rebuildDetail = rebuild
-      }
-      rebuild()
+      const chooser = chooserRef.current
+      const el = detailRef.current
+      if (!chooser || !el) return
+      const unmountSwitcher = mountSwitcher(chooser)
+      const onLanguageChange = () => { el.innerHTML = buildDetailRowsHTML() }
+      onLanguageChange()
       const unbind = bindDetailEvents(el)
-      const onLanguageChange = () => rebuild()
       window.addEventListener(LANG_CHANGE_EVENT, onLanguageChange)
       return () => {
         window.removeEventListener(LANG_CHANGE_EVENT, onLanguageChange)
         unbind()
+        unmountSwitcher()
       }
     }, [])
-    return React.createElement('div', { ref, className: 'dsh-bloom-detail' })
+    return React.createElement('div', {
+      className: 'dsh-bloom-settings',
+      children: [
+        React.createElement('div', { key: 'appearance', ref: chooserRef }),
+        React.createElement('div', { key: 'details', ref: detailRef, className: 'dsh-bloom-detail' }),
+      ],
+    })
   }
 }

@@ -116,6 +116,7 @@ export const DICT_EN: Record<string, string> = {
   "检查更新": "Check for updates",
   "深浅模式": "Light or dark",
   "质感": "Material",
+  "输入框透明": "Transparent input box",
   "毛玻璃": "Frosted glass",
   "磨砂玻璃": "Matte glass",
   "液态玻璃": "Liquid glass",

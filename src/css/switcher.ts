@@ -1,12 +1,5 @@
-/**
- * 顶栏主题切换器与外观菜单样式。
- * 路由：DSH 会话页头部 conversation.session.header.corner。
- */
+/** Bloom 设置页和独立外观面板共用的样式。 */
 export const SWITCHER_CSS = `
-/* The Slot anchor is an empty shell; the host's corner seat positions it (#113).
-   The old leading-clearance translateX tuck served only the leading seat — at the
-   trailing corner it would push the widget rightward, so it is removed. */
-.dsh-bloom-slot { display: inline-block; flex: none; }
 .dsh-bloom-overlay { pointer-events: none; }
 .dsh-bloom-overlay #dsh-bloom-update-banner { pointer-events: auto; }
 .dsh-bloom-switcher[data-slotted="true"] { --bloom-menu-max-h: calc(100vh - 24px); position: fixed; pointer-events: auto; z-index: 80; }
@@ -204,6 +197,62 @@ export const SWITCHER_CSS = `
   box-shadow: 0 -8px 12px color-mix(in oklch, var(--dsw-alias-bg-layer-2, #fff), transparent 28%);
 }
 .dsh-bloom-menu[hidden] { display: none; }
+.dsh-bloom-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  min-width: 0;
+}
+.dsh-bloom-switcher[data-placement="settings"] { display: block; }
+.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-menu {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  min-width: 0;
+}
+.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-menu > .dsh-bloom-foot {
+  position: relative;
+  bottom: auto;
+}
+.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-foot__links:has(.dsh-bloom-share-panel:not([hidden])),
+.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-share-wrap:has(.dsh-bloom-share-panel:not([hidden])) {
+  flex-basis: 100%;
+  flex-wrap: wrap;
+}
+.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-share-panel {
+  position: static;
+  width: 100%;
+  max-height: none;
+  margin-top: 4px;
+}
+.dsh-bloom-composer-switch {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 22px;
+  padding: 3px;
+  border: 1px solid var(--bloom-hairline-strong, currentColor);
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-layer-2, Canvas);
+  color: var(--dsw-alias-label-secondary, CanvasText);
+  cursor: pointer;
+}
+.dsh-bloom-composer-switch::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.dsh-bloom-composer-switch[aria-checked="true"] {
+  justify-content: flex-end;
+  border-color: var(--bloom-accent, Highlight);
+  background: var(--bloom-accent, Highlight);
+  color: var(--dsw-alias-bg-layer-1, HighlightText);
+}
 /* 菜单入场：从右上角 scale+fade 打开。
  *
  * ⚠️ 重播靠的是 JS 里的 playEnter()（见 switcher.ts）：先摘掉 .is-entering、

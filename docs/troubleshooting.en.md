@@ -7,7 +7,7 @@ Common fixes for users. For developer details see [lessons.md](lessons.md) (host
 
 ## Installed the theme but nothing changed
 
-1. **Confirm the version actually changed.** Open the theme button in the top bar; the bottom of the panel
+1. **Confirm the version actually changed.** Open **Settings → Bloom → About Bloom**. The version row
    shows the active `Bloom v0.x.y`. That number comes from the plugin itself, not from a cache. If it is
    still the old version, see the next section.
 2. **Quit completely and reopen.** Quit the app with Cmd+Q and start it again; closing the window is not
@@ -114,7 +114,7 @@ the current palette setting was remembered from last time, then switch manually 
 
 ## Change the glass material
 
-Open the Bloom theme button in the top bar. In the panel's "Material" group, choose frosted, matte or liquid glass. Use the "Theme" group to change the palette and the "Mode" group to select light, dark or follow system.
+Open **Settings → Bloom**. In **Material**, choose frosted, matte or liquid glass and set **Transparent input box** independently. Use **Theme** to change the palette and **Mode** to select light, dark or follow system.
 
 When the system requests reduced transparency, the automatic default uses a solid background. If you explicitly select one of the three materials, reduced transparency alone does not override that selection. Forced colors or high contrast take precedence and use a solid background. `glassMode` in diagnostics is the saved preference and may differ from the effective appearance.
 

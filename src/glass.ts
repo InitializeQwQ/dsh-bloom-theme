@@ -9,12 +9,36 @@ export type GlassMode = 'auto' | GlassMaterial
 export type EffectiveGlassMode = GlassMaterial | 'solid'
 
 const KEY = `${STORAGE_KEY}-glass-mode`
+const COMPOSER_TRANSPARENCY_KEY = `${STORAGE_KEY}-composer-transparent`
 
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
 export const GLASS_MODES: GlassMaterial[] = ['frosted', 'matte', 'liquid']
 
 let cached: GlassMode | undefined
 let needsMigration = false
+let composerTransparent: boolean | undefined
+
+/** Existing profiles keep the glass input surface until the user switches it off. */
+export function readComposerTransparency(): boolean {
+  if (composerTransparent === undefined) {
+    try {
+      composerTransparent = localStorage.getItem(COMPOSER_TRANSPARENCY_KEY) !== 'false'
+    } catch {
+      composerTransparent = true
+    }
+  }
+  return composerTransparent
+}
+
+export function applyComposerTransparency(): void {
+  document.body.toggleAttribute('data-bloom-composer-opaque', !readComposerTransparency())
+}
+
+export function writeComposerTransparency(transparent: boolean): void {
+  composerTransparent = transparent
+  try { localStorage.setItem(COMPOSER_TRANSPARENCY_KEY, String(transparent)) } catch {}
+  applyComposerTransparency()
+}
 
 function normalizeGlassMode(value: unknown): GlassMode {
   switch (value) {

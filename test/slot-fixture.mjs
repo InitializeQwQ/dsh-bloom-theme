@@ -73,10 +73,18 @@ window.fixtureSlots = {
       host.style.cssText = 'position:fixed;inset:0;z-index:1000;pointer-events:none'
       document.body.append(host)
     } else if (name === 'settings.section' || name === 'settings.section.icon') {
-      // 设置节内容与它的导航图标只在设置对话框里渲染 —— 夹具只登记不渲染，
-      // 避免第二份 .dsh-bloom-detail / 图标 span 污染几何断言与选择器（谁要测谁自挂 buildDetailEl）
-      window.slotRegistrations.push({ ...options, labelText })
-      return () => { const i = window.slotRegistrations.findIndex(r => r.id === options.id); if (i >= 0) window.slotRegistrations.splice(i, 1) }
+      // The settings section is mounted only when the fixture opens it.
+      const registration = { ...options, labelText }
+      window.slotRegistrations.push(registration)
+      occupants.set(name, { root: null, host, Component })
+      return () => {
+        const current = occupants.get(name)
+        if (current?.root) flushSync(() => current.root.unmount())
+        current?.host.remove()
+        occupants.delete(name)
+        const index = window.slotRegistrations.indexOf(registration)
+        if (index >= 0) window.slotRegistrations.splice(index, 1)
+      }
     } else {
       (document.querySelector('[data-fixture-header]') ?? document.querySelector('header')).append(host)
     }
@@ -87,7 +95,7 @@ window.fixtureSlots = {
     return () => {
       const current = occupants.get(name)
       if (!current) return
-      flushSync(() => current.root.unmount())
+      if (current.root) flushSync(() => current.root.unmount())
       current.host.remove()
       occupants.delete(name)
     }
@@ -100,6 +108,9 @@ window.unmountFixtureSlot = name => {
 }
 window.remountFixtureSlot = name => {
   const entry = occupants.get(name)
+  if (!entry.host.isConnected) {
+    (document.querySelector('[data-fixture-settings]') ?? document.body).append(entry.host)
+  }
   entry.root = createRoot(entry.host)
   flushSync(() => entry.root.render(React.createElement(entry.Component)))
 }

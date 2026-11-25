@@ -80,7 +80,6 @@ ${s} header[class*="_header"] > div[class*="_tabs"] {
   box-shadow: none;
 }
 ${s} .dsh-bloom-menu {
-  position: absolute;
   background: ${MENU};
   border-color: transparent;
   backdrop-filter: ${BLUR};

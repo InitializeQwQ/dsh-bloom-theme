@@ -1,18 +1,11 @@
-/**
- * 顶栏配色切换器 —— 主题唯一的交互控件。
- *
- * 由官方 conversation.session.header.corner Slot 持有（#113：不占对话标题前的
- * leading 座），不查找或改写宿主顶栏。
- * 键盘可完整操作（role=radiogroup + aria-checked + 方向键），窄屏隐藏中文名。
- */
+/** Bloom 设置页的配色、明暗模式与分享控件。 */
 import { FEATURED_VARIANTS, isNewVariant, PALETTE, VARIANTS } from './palette.js'
-import { resetRotationTimer, startRotation } from './rotation.js'
-import { applyMotion, readMotion, readVariant } from './dom.js'
+import { resetRotationTimer } from './rotation.js'
+import { readVariant } from './dom.js'
 import { PLUGIN_ID, PLUGIN_VERSION, STORAGE_KEY } from './meta.js'
-import { checkUpdate, refreshUpdateBadge, renderDshUpdate, checkDshLatest } from './version.js'
+import { refreshUpdateBadge, renderDshUpdate, checkDshLatest } from './version.js'
 export { SWITCHER_CSS } from './css/switcher.js'
-import { currentIsDark, readStoredMode, setMode, onAppearanceChange, type AppearanceMode } from './appearance.js'
-import type { GlassMode } from './glass.js'
+import { readStoredMode, setMode, onAppearanceChange, type AppearanceMode } from './appearance.js'
 import { tr, variantName, variantPoem, variantGlyph, getLang, LANG_CHANGE_EVENT } from './lang.js'
 import { copyDiagnostics, formatDiagnosticsMarkdown } from './diagnostics.js'
 import { buildFeedbackUrl } from './feedback.js'
@@ -65,16 +58,6 @@ export const swatchStyle = (v) =>
 /** 诗句渐变：和色点同一对颜色，深浅两套各给一个变量，由 CSS 按 body 的深色标记挑。 */
 
 /**
- * 顶栏切换器：下拉式（收起只占一个按钮宽度）。
- *
- * 为什么是下拉而不是 4 个并排色块：并排要 186px 宽，固定在右上角会**完全盖住**
- * DSH 自己的 Session log 按钮（实测两者矩形几乎重合，按钮点不到）——那是功能性 bug，
- * 不是观感问题。收成一个按钮后再挂进 header 工具区，就跟原生控件并排共存。
- *
- * v0.5.0：移除「氛围」区（壁纸 / 主题包已删），只留 4 个变体切换。
- *         玻璃为主视觉、默认常开，见 GLASS_CSS。
- */
-/**
  * 配色变化订阅 —— theme-tokens 层用它重压宿主 token 覆盖层。
  *
  * 换配色时宿主 token 层必须跟着重压（覆盖层里的颜色是按变体算的）。
@@ -110,10 +93,12 @@ export function applyVariant(variant) {
     notifyVariantChange(variant)
     const root = document.querySelector<HTMLElement>('.dsh-bloom-switcher')
     if (!root) return
+    const inSettings = root.dataset.placement === 'settings'
     root.querySelectorAll<HTMLElement>('.dsh-bloom-option').forEach((el) => {
       const on = el.dataset.variant === variant
       el.setAttribute('data-active', String(on))
       el.setAttribute('aria-selected', String(on))
+      if (inSettings) el.tabIndex = on ? 0 : -1
     })
     const name = root.querySelector<HTMLElement>('.dsh-bloom-trigger__name')
     if (name) name.textContent = variantName(variant)
@@ -124,6 +109,7 @@ export function applyVariant(variant) {
     if (headName) headName.textContent = variantName(variant)
     const headDot = root.querySelector<HTMLElement>('.dsh-bloom-head__current .dsh-bloom-dot')
     if (headDot) headDot.setAttribute('style', dotStyle(variant))
+    if (inSettings) updatePaletteCaption(root, variant)
   }
   // View Transitions API（Chrome 111+/Edge/Safari TP）。
   // 不支持时降级为瞬时应用 —— 行为与改前一致，老浏览器照常工作。
@@ -181,7 +167,7 @@ async function shareInstall(btn: HTMLElement, schedule: (fn: () => void, delay: 
 }
 
 let switcherSerial = 0
-export function buildSwitcherHTML(currentVariant) {
+export function buildSwitcherHTML(currentVariant, inSettings = false) {
   const sharePanelId = `dsh-bloom-share-${++switcherSerial}`
   // Hidden-from-menu legacy colors remain valid in storage; show the active legacy
   // choice until its owner deliberately selects a featured replacement.
@@ -209,28 +195,28 @@ export function buildSwitcherHTML(currentVariant) {
     // 单字是 aria-hidden 的装饰；名字与诗仍由 aria-label 承担语义。
     const label = `${variantName(v)} · ${variantPoem(v)}`
     return `<button type="button" class="dsh-bloom-option" role="option" data-variant="${v}"` +
-      ` aria-selected="${on}" data-active="${on}" aria-label="${label}" title="${label}">` +
+      ` aria-selected="${on}" data-active="${on}" tabindex="${inSettings && on ? 0 : -1}" aria-label="${label}" title="${label}">` +
       `<span class="dsh-bloom-option__swatch" style="${swatchStyle(v)}" aria-hidden="true">` +
       `<span class="dsh-bloom-option__glyph">${variantGlyph(v)}</span></span>` +
       `<span class="dsh-bloom-check" aria-hidden="true">✓</span>` +
       `${isNewVariant(v, PLUGIN_VERSION) ? `<span class="dsh-bloom-option__new" aria-hidden="true"></span>` : ''}</button>`
   }).join('')
-  return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}">
-  <button type="button" class="dsh-bloom-trigger" aria-label="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}" aria-haspopup="dialog" aria-expanded="false" title="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}">
+  return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}"${inSettings ? ' data-placement="settings"' : ''}>
+  ${inSettings ? '' : `<button type="button" class="dsh-bloom-trigger" aria-label="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}" aria-haspopup="dialog" aria-expanded="false" title="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}">
     <span class="dsh-bloom-dot" style="${dotStyle(currentVariant)}"></span>
     <span class="dsh-bloom-trigger__name">${variantName(currentVariant)}</span>
     <svg class="dsh-bloom-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
       <path d="M2 4l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-  </button>
-  <div class="dsh-bloom-menu" lang="${getLang()}" role="dialog" aria-label="${tr('Bloom 外观设置')}" hidden>
+  </button>`}
+  <div class="dsh-bloom-menu" lang="${getLang()}" role="${inSettings ? 'group' : 'dialog'}" aria-label="${tr('Bloom 外观设置')}"${inSettings ? '' : ' hidden'}>
     <div class="dsh-bloom-head">
       <span class="dsh-bloom-head__title">${tr('外观')}</span>
       <span class="dsh-bloom-head__current">
         <span class="dsh-bloom-dot" style="${dotStyle(currentVariant)}"></span>
         <span data-head-name>${variantName(currentVariant)}</span>
       </span>
-      <button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>
+      ${inSettings ? '' : `<button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>`}
     </div>
     <div class="dsh-bloom-section">${tr('主题')}</div>
     <div class="dsh-bloom-options" role="listbox" aria-label="${tr('配色')}">${options}</div>
@@ -259,7 +245,7 @@ export function buildSwitcherHTML(currentVariant) {
         </button>
       </div>
     </div>
-    <div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>
+    ${inSettings ? '' : `<div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>`}
     <div class="dsh-bloom-more-body" hidden data-open="false" data-instant="true">
       <div class="dsh-bloom-more-inner">
       ${changelogHTML()}
@@ -381,7 +367,7 @@ function setMoreOpen(root: HTMLElement, open: boolean) {
  */
 function rerenderMenu(el: HTMLElement, variant: string) {
   const holder = document.createElement('div')
-  holder.innerHTML = buildSwitcherHTML(variant)
+  holder.innerHTML = buildSwitcherHTML(variant, el.dataset.placement === 'settings')
   const fresh = holder.querySelector<HTMLElement>('.dsh-bloom-menu')
   const cur = el.querySelector<HTMLElement>('.dsh-bloom-menu')
   // 版本区块展开与否也要带过去：新模板里它默认收起
@@ -406,7 +392,6 @@ function rerenderMenu(el: HTMLElement, variant: string) {
   const trigger = el.querySelector<HTMLElement>('.dsh-bloom-trigger')
   if (trigger) trigger.setAttribute('title', tr('Bloom 主题 · v{0}', PLUGIN_VERSION))
   syncAppearanceRow(el)
-  fresh?.querySelectorAll<HTMLElement>('.dsh-bloom-option').forEach((opt) => opt.setAttribute('tabindex', '-1'))
   refreshUpdateBadge()
   // DSH 版本区是从缓存画的，重建后补一次，否则会停在「检查中…」
   renderDshUpdate()
@@ -437,6 +422,13 @@ function syncAppearanceRow(el: HTMLElement) {
 }
 
 const switcherCleanups = new Map<HTMLElement, () => void>()
+
+function updatePaletteCaption(el: HTMLElement, variant: string) {
+  const name = el.querySelector<HTMLElement>('[data-caption-name]')
+  const poem = el.querySelector<HTMLElement>('[data-caption-poem]')
+  if (name) name.textContent = variantName(variant)
+  if (poem) poem.textContent = variantPoem(variant)
+}
 
 /**
  * 把菜单夹进视口 —— 触发器在宿主标题栏哪一端都行。
@@ -531,9 +523,9 @@ export function cleanupSwitcher() {
   for (const el of switcherCleanups.keys()) disposeSwitcher(el)
 }
 
-export function buildSwitcherEl(initialVariant) {
+export function buildSwitcherEl(initialVariant, inSettings = false) {
   const wrapper = document.createElement('div')
-  wrapper.innerHTML = buildSwitcherHTML(initialVariant)
+  wrapper.innerHTML = buildSwitcherHTML(initialVariant, inSettings)
   const el = wrapper.firstElementChild as HTMLElement
   const capture = createShareCapture()
   const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -582,8 +574,10 @@ export function buildSwitcherEl(initialVariant) {
     })
   }
   const onViewportChange = () => reposition()
-  window.addEventListener('resize', onViewportChange)
-  window.addEventListener('scroll', onViewportChange, true)
+  if (!inSettings) {
+    window.addEventListener('resize', onViewportChange)
+    window.addEventListener('scroll', onViewportChange, true)
+  }
   const shareStatus = (message: string) => {
     const status = el.querySelector<HTMLElement>('.dsh-bloom-share-status')
     if (status) status.textContent = message
@@ -641,11 +635,10 @@ export function buildSwitcherEl(initialVariant) {
   // 监听挂在 window 上：面板可能被替换掉，但事件源始终在。
   const onLanguageChange = () => {
     closeShare()
-    if (el.isConnected) rerenderMenu(el, readVariant())
+    if (el.isConnected) rerenderMenu(el, document.body.dataset.bloomVariant ?? readVariant())
   }
   window.addEventListener(LANG_CHANGE_EVENT, onLanguageChange)
 
-  startRotation(applyVariant)
   const openMenu = () => {
     const wanted = readVariant()
     const options = el.querySelectorAll<HTMLElement>('.dsh-bloom-option')
@@ -681,10 +674,7 @@ export function buildSwitcherEl(initialVariant) {
   // 改成网格下方一行字幕后，位置恒定、宽度够、不与色块抢视线。
   const syncCaption = (variant: string | undefined) => {
     if (!variant) return
-    const name = el.querySelector<HTMLElement>('[data-caption-name]')
-    const poem = el.querySelector<HTMLElement>('[data-caption-poem]')
-    if (name) name.textContent = variantName(variant)
-    if (poem) poem.textContent = variantPoem(variant)
+    updatePaletteCaption(el, variant)
   }
   el.addEventListener('pointerover', (e) => {
     const opt = (e.target as HTMLElement).closest<HTMLElement>('.dsh-bloom-option')
@@ -749,8 +739,7 @@ export function buildSwitcherEl(initialVariant) {
       if (!panel) return
       if (!panel.hidden) closeShare()
       else {
-        // 宿主可能在菜单打开期间移动锚点；分享面板依赖菜单边界，打开时先重新夹取。
-        placeMenu(el)
+        if (!inSettings) placeMenu(el)
         track('share')
         panel.hidden = false
         share.setAttribute('aria-expanded', 'true')
@@ -783,8 +772,10 @@ export function buildSwitcherEl(initialVariant) {
     const opt = (e.target as HTMLElement).closest('.dsh-bloom-option') as HTMLElement | null
     if (opt) {
       applyVariant(opt.dataset.variant)
-      closeMenu(el)
-      el.querySelector<HTMLElement>('.dsh-bloom-trigger')?.focus()
+      if (!inSettings) {
+        closeMenu(el)
+        el.querySelector<HTMLElement>('.dsh-bloom-trigger')?.focus()
+      }
       return
     }
   })
@@ -803,7 +794,7 @@ export function buildSwitcherEl(initialVariant) {
     const sharePanel = el.querySelector<HTMLElement>('.dsh-bloom-share-panel')
     const shareTrigger = el.querySelector<HTMLElement>('.dsh-bloom-share')
     if (sharePanel && !sharePanel.hidden) {
-      if (e.key === 'Escape') { e.preventDefault(); closeShare(); shareTrigger?.focus(); return }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeShare(); shareTrigger?.focus(); return }
       const withinShare = e.target instanceof Element && (sharePanel.contains(e.target) || e.target === shareTrigger)
       if (withinShare && !(e.target instanceof HTMLTextAreaElement) && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         const actions = [...sharePanel.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], textarea:not([hidden])')].filter(node => node.getClientRects().length > 0)
@@ -814,6 +805,20 @@ export function buildSwitcherEl(initialVariant) {
         }
         return
       }
+    }
+
+    if (inSettings) {
+      if (idx < 0) return
+      const step = ['ArrowDown', 'ArrowRight'].includes(e.key) ? 1 : ['ArrowUp', 'ArrowLeft'].includes(e.key) ? -1 : 0
+      const next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1
+        : step ? (idx + step + options.length) % options.length : idx
+      if (next !== idx) {
+        e.preventDefault()
+        options[idx].tabIndex = -1
+        options[next].tabIndex = 0
+        options[next].focus()
+      }
+      return
     }
 
     // Tab 边界：焦点走出面板边界时收起并把焦点还给触发器。
@@ -884,17 +889,13 @@ export function buildSwitcherEl(initialVariant) {
     }
   })
 
-  // 选项做成可聚焦（listbox 语义要求 option 可接收焦点）
-  el.querySelectorAll<HTMLElement>('.dsh-bloom-option').forEach((opt) => {
-    opt.setAttribute('tabindex', '-1')
-  })
-
   // 点击外部关闭。挂 document 上，用 el.contains 判断而不是 blur ——
   // blur 会在点菜单项时先触发，导致选不中。
   const onOutsideClick = (e: MouseEvent) => {
     if (!el.contains(e.target as Node)) closeMenu(el)
   }
-  document.addEventListener('click', onOutsideClick)
+  if (!inSettings) document.addEventListener('click', onOutsideClick)
+  syncAppearanceRow(el)
 
   // 外观变化（宿主 theme/change，或本地 setMode）→ 刷新模式行选中态与氛围层。
   // 2026-11-21 · owner：「深色浅色跟随系统，这太垃圾了」——
@@ -923,64 +924,15 @@ export function buildSwitcherEl(initialVariant) {
   return el
 }
 
-/** Mount only into the container provided by our React Slot component. */
-export function mountSwitcher(host: HTMLElement, anchor: HTMLElement): () => void {
-  const el = buildSwitcherEl(readVariant())
-  el.dataset.slotted = 'true'
+/** Mount the controls inside the host's Bloom settings section. */
+export function mountSwitcher(host: HTMLElement): () => void {
+  const el = buildSwitcherEl(document.body.dataset.bloomVariant ?? readVariant(), true)
   host.append(el)
-  const trigger = el.querySelector<HTMLElement>('.dsh-bloom-trigger')!
-  // Measure only Bloom's own anchor. No host selectors or DOM reparenting.
-  let last = ''
-  let size = ''
-  const position = () => {
-    const triggerRect = trigger.getBoundingClientRect()
-    const width = Math.ceil(triggerRect.width)
-    const height = Math.ceil(triggerRect.height)
-    const measured = `${width}|${height}`
-    if (measured !== size) {
-      size = measured
-      anchor.style.width = `${width}px`
-      anchor.style.height = `${height}px`
-    }
-    const box = anchor.getBoundingClientRect()
-    const covered = Array.from(document.querySelectorAll<HTMLElement>('dialog[open], [role="dialog"][aria-modal="true"]'))
-      .some(modal => !el.contains(modal) && modal.getClientRects().length > 0 && getComputedStyle(modal).visibility !== 'hidden')
-    const key = `${box.left}|${box.top}|${box.width}|${box.height}|${window.innerHeight}|${covered}`
-    if (key === last) return
-    last = key
-    // A hidden anchor has no box: hide the widget rather than pinning it to 0,0.
-    el.style.visibility = box.width && box.height && !covered ? 'visible' : 'hidden'
-    if (covered) closeMenu(el)
-    el.style.left = `${box.left}px`
-    el.style.top = `${box.top}px`
-    el.style.setProperty('--bloom-menu-max-h', `${Math.max(160, window.innerHeight - box.bottom - 18)}px`)
-    // switcher 自己动了 → 菜单的视口夹取结果要跟着重算（标题栏宽度会随侧栏收起变化）
-    placeMenu(el)
-  }
-  position()
-  // The anchor can move without resizing (sidebar collapse, sibling width), so track its own rect per frame.
-  let frame = 0
-  const track = () => { position(); frame = requestAnimationFrame(track) }
-  frame = requestAnimationFrame(track)
-  const observer = new ResizeObserver(position)
-  observer.observe(anchor)
-  observer.observe(trigger)
-  // 视口尺寸变了 → 锚点位置要重算（position 的 key 里没有窗口宽度）
-  const onResize = () => { position() }
-  window.addEventListener('resize', onResize)
-  window.addEventListener('scroll', position, true)
   refreshUpdateBadge()
   renderDshUpdate()
   void checkDshLatest()
   return () => {
-    cancelAnimationFrame(frame)
-    observer.disconnect()
-    window.removeEventListener('resize', onResize)
-    window.removeEventListener('scroll', position, true)
-    // disposeSwitcher 会连同定位监听与内联样式一起回收
     disposeSwitcher(el)
     el.remove()
-    anchor.style.removeProperty('width')
-    anchor.style.removeProperty('height')
   }
 }
