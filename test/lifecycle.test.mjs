@@ -185,23 +185,35 @@ test('Bloom renders its appearance controls only in the settings slot', async t 
   assert.equal(await page.locator('[data-fixture-slot]').count(), 0)
 })
 
-test('settings selector fits a narrow scrollable window, and supports keyboard selection and share', async t => {
+test('inline palette cards share settings styling and support keyboard selection in a narrow window', async t => {
   const page = await setupPage(t)
   await page.setViewportSize({ width: 360, height: 420 })
   await page.evaluate(() => window.applyModule(window.mockLocale))
   await mountSettings(page)
   const settings = page.locator('[data-fixture-settings]')
   const listbox = settings.getByRole('listbox')
-  const menu = settings.locator('.dsh-bloom-menu')
-  const boxes = await Promise.all([settings.boundingBox(), menu.boundingBox()])
+  const palette = settings.locator('.dsh-bloom-palette-section')
+  const boxes = await Promise.all([settings.boundingBox(), palette.boundingBox()])
   assert.ok(boxes[1].x >= boxes[0].x && boxes[1].x + boxes[1].width <= boxes[0].x + boxes[0].width)
   const active = listbox.locator('[aria-selected="true"]')
   const colorCard = listbox.getByRole('option').first()
   assert.ok(await colorCard.locator('.dsh-bloom-option__dot').isVisible())
   assert.ok(await colorCard.locator('.dsh-bloom-option__name').textContent())
   assert.ok(await colorCard.locator('.dsh-bloom-option__poem').textContent())
+  assert.deepEqual(await palette.evaluate(node => {
+    const { backgroundColor, boxShadow, backdropFilter } = getComputedStyle(node)
+    return { backgroundColor, boxShadow, backdropFilter }
+  }), { backgroundColor: 'rgba(0, 0, 0, 0)', boxShadow: 'none', backdropFilter: 'none' })
+  const readCard = locator => locator.evaluate(node => {
+    const { backgroundColor, borderColor, borderRadius } = getComputedStyle(node)
+    return { backgroundColor, borderColor, borderRadius }
+  })
+  const unselected = listbox.getByRole('option', { selected: false }).first()
+  const settingRow = settings.locator('.dsh-bloom-detail .dsh-bloom-row').first()
+  assert.deepEqual(await readCard(unselected), await readCard(settingRow))
   const modeGroup = settings.locator('.dsh-bloom-mode').getByRole('group')
-  assert.equal(await menu.locator('[data-mode]').count(), 0)
+  assert.equal(await palette.locator('[data-mode]').count(), 0)
+  assert.equal(await settings.locator('.dsh-bloom-menu, .dsh-bloom-foot, .dsh-bloom-more-body').count(), 0)
   assert.ok((await modeGroup.boundingBox()).y < (await listbox.boundingBox()).y)
   assert.deepEqual(await modeGroup.getByRole('button').locator('span').allTextContents(), ['浅色', '深色', '跟随系统'])
   const initial = await active.getAttribute('data-variant')
@@ -226,14 +238,6 @@ test('settings selector fits a narrow scrollable window, and supports keyboard s
   await system.click()
   assert.equal(await system.getAttribute('aria-pressed'), 'true')
   assert.equal(await active.getAttribute('data-variant'), next, 'changing the display mode keeps the palette')
-
-  await menu.locator('.dsh-bloom-share').click()
-  const share = menu.locator('.dsh-bloom-share-panel')
-  assert.equal(await share.isVisible(), true)
-  await share.locator('.dsh-bloom-share-install').focus()
-  await page.keyboard.press('Escape')
-  assert.equal(await share.isHidden(), true)
-  assert.equal(await menu.locator('.dsh-bloom-share:focus').count(), 1)
 })
 
 test('saved rotation starts with the theme even when settings have not opened', async t => {

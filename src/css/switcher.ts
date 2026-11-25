@@ -205,28 +205,6 @@ export const SWITCHER_CSS = `
   min-width: 0;
 }
 .dsh-bloom-switcher[data-placement="settings"] { display: grid; gap: 10px; }
-.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-menu {
-  position: relative;
-  top: auto;
-  right: auto;
-  z-index: auto;
-  min-width: 0;
-}
-.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-menu > .dsh-bloom-foot {
-  position: relative;
-  bottom: auto;
-}
-.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-foot__links:has(.dsh-bloom-share-panel:not([hidden])),
-.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-share-wrap:has(.dsh-bloom-share-panel:not([hidden])) {
-  flex-basis: 100%;
-  flex-wrap: wrap;
-}
-.dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-share-panel {
-  position: static;
-  width: 100%;
-  max-height: none;
-  margin-top: 4px;
-}
 .dsh-bloom-composer-switch {
   box-sizing: border-box;
   display: inline-flex;
@@ -643,16 +621,14 @@ body[data-ds-dark-theme] .dsh-bloom-option__swatch {
 /* 设置页配色卡：色点、名称与诗句始终可见。 */
 .dsh-bloom-settings-palette {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
-  gap: 8px;
-  padding-inline: 14px;
+  gap: 6px;
+  padding: 0;
 }
 .dsh-bloom-settings-palette .dsh-bloom-option {
   justify-content: flex-start;
   gap: 9px;
   min-height: 48px;
   aspect-ratio: auto;
-  padding: 8px 10px;
-  border: 1px solid var(--dsw-alias-border-l2, var(--bloom-hairline));
 }
 .dsh-bloom-settings-palette .dsh-bloom-option[data-active="true"] {
   border-color: var(--bloom-accent, Highlight);
@@ -1357,6 +1333,7 @@ body[data-ds-dark-theme] .dsh-bloom-share-action__hint { color: var(--dsw-alias-
   gap: 4px;
   max-width: 420px;
 }
+.dsh-bloom-settings .dsh-bloom-detail { max-width: none; }
 .dsh-bloom-detail .dsh-bloom-more-body { grid-template-rows: 1fr; }
 .dsh-bloom-detail .dsh-bloom-more { display: none; }
 .dsh-bloom-detail .dsh-bloom-foot { border-top: 1px solid var(--dsw-alias-hairline, rgba(0,0,0,.08)); margin-top: 8px; padding: 8px 14px 2px; }

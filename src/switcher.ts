@@ -3,7 +3,7 @@ import { FEATURED_VARIANTS, isNewVariant, PALETTE, VARIANTS } from './palette.js
 import { resetRotationTimer } from './rotation.js'
 import { readVariant } from './dom.js'
 import { PLUGIN_ID, PLUGIN_VERSION, STORAGE_KEY } from './meta.js'
-import { refreshUpdateBadge, renderDshUpdate, checkDshLatest } from './version.js'
+import { refreshUpdateBadge, renderDshUpdate } from './version.js'
 export { SWITCHER_CSS } from './css/switcher.js'
 import { readStoredMode, setMode, onAppearanceChange, type AppearanceMode } from './appearance.js'
 import { tr, variantName, variantPoem, variantGlyph, getLang, LANG_CHANGE_EVENT } from './lang.js'
@@ -198,7 +198,6 @@ function buildModeHTML(inSettings: boolean) {
 
 let switcherSerial = 0
 export function buildSwitcherHTML(currentVariant, inSettings = false) {
-  const sharePanelId = `dsh-bloom-share-${++switcherSerial}`
   // Hidden-from-menu legacy colors remain valid in storage; show the active legacy
   // choice until its owner deliberately selects a featured replacement.
   const shown = FEATURED_VARIANTS.includes(currentVariant)
@@ -215,33 +214,43 @@ export function buildSwitcherHTML(currentVariant, inSettings = false) {
       : `<span class="dsh-bloom-option__swatch" style="${swatchStyle(v)}" aria-hidden="true">
         <span class="dsh-bloom-option__glyph">${variantGlyph(v)}</span></span>
         <span class="dsh-bloom-check" aria-hidden="true">✓</span>`
-    return `<button type="button" class="dsh-bloom-option" role="option" data-variant="${v}"` +
+    return `<button type="button" class="dsh-bloom-option${inSettings ? ' dsh-bloom-row' : ''}" role="option" data-variant="${v}"` +
       ` aria-selected="${on}" data-active="${on}" tabindex="${inSettings && on ? 0 : -1}" aria-label="${label}" title="${label}">` +
       preview +
       `${isNewVariant(v, PLUGIN_VERSION) ? `<span class="dsh-bloom-option__new" aria-hidden="true"></span>` : ''}</button>`
   }).join('')
-  return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}"${inSettings ? ' data-placement="settings"' : ''}>
-  ${inSettings ? '' : `<button type="button" class="dsh-bloom-trigger" aria-label="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}" aria-haspopup="dialog" aria-expanded="false" title="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}">
+  if (inSettings) {
+    return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}" data-placement="settings" lang="${getLang()}">
+      <section class="dsh-bloom-mode" aria-label="${tr('模式')}">${buildModeHTML(true)}</section>
+      <section class="dsh-bloom-palette-section" data-bloom-picker>
+        <h3 class="dsh-bloom-group">${tr('配色')}</h3>
+        <div class="dsh-bloom-options dsh-bloom-settings-palette" role="listbox" aria-label="${tr('配色')}">${options}</div>
+      </section>
+    </div>`
+  }
+  const sharePanelId = `dsh-bloom-share-${++switcherSerial}`
+  return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}">
+  <button type="button" class="dsh-bloom-trigger" aria-label="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}" aria-haspopup="dialog" aria-expanded="false" title="${tr('Bloom 主题 · v{0}', PLUGIN_VERSION)}">
     <span class="dsh-bloom-dot" style="${dotStyle(currentVariant)}"></span>
     <span class="dsh-bloom-trigger__name">${variantName(currentVariant)}</span>
     <svg class="dsh-bloom-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
       <path d="M2 4l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-  </button>`}
-  ${inSettings ? `<section class="dsh-bloom-mode" lang="${getLang()}" aria-label="${tr('模式')}">${buildModeHTML(true)}</section>` : ''}
-  <div class="dsh-bloom-menu" lang="${getLang()}" role="${inSettings ? 'group' : 'dialog'}" aria-label="${tr('Bloom 外观设置')}"${inSettings ? '' : ' hidden'}>
+  </button>
+  <div class="dsh-bloom-menu" data-bloom-picker lang="${getLang()}" role="dialog" aria-label="${tr('Bloom 外观设置')}" hidden>
     <div class="dsh-bloom-head">
-      <span class="dsh-bloom-head__title">${inSettings ? tr('配色') : tr('外观')}</span>
-      ${inSettings ? '' : `<span class="dsh-bloom-head__current">
+      <span class="dsh-bloom-head__title">${tr('外观')}</span>
+      <span class="dsh-bloom-head__current">
         <span class="dsh-bloom-dot" style="${dotStyle(currentVariant)}"></span>
         <span data-head-name>${variantName(currentVariant)}</span>
       </span>
-      <button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>`}
+      <button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>
     </div>
-    ${inSettings ? '' : `<div class="dsh-bloom-section">${tr('主题')}</div>`}
-    <div class="dsh-bloom-options${inSettings ? ' dsh-bloom-settings-palette' : ''}" role="listbox" aria-label="${tr('配色')}">${options}</div>
-    ${inSettings ? '' : `<div class="dsh-bloom-caption" data-caption role="status" aria-live="polite"><span class="dsh-bloom-caption__name" data-caption-name>${variantName(currentVariant)}</span><span class="dsh-bloom-caption__poem" data-caption-poem>${variantPoem(currentVariant)}</span></div>${buildModeHTML(false)}`}
-    ${inSettings ? '' : `<div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>`}
+    <div class="dsh-bloom-section">${tr('主题')}</div>
+    <div class="dsh-bloom-options" role="listbox" aria-label="${tr('配色')}">${options}</div>
+    <div class="dsh-bloom-caption" data-caption role="status" aria-live="polite"><span class="dsh-bloom-caption__name" data-caption-name>${variantName(currentVariant)}</span><span class="dsh-bloom-caption__poem" data-caption-poem>${variantPoem(currentVariant)}</span></div>
+    ${buildModeHTML(false)}
+    <div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>
     <div class="dsh-bloom-more-body" hidden data-open="false" data-instant="true">
       <div class="dsh-bloom-more-inner">
       ${changelogHTML()}
@@ -364,8 +373,8 @@ function setMoreOpen(root: HTMLElement, open: boolean) {
 function rerenderMenu(el: HTMLElement, variant: string) {
   const holder = document.createElement('div')
   holder.innerHTML = buildSwitcherHTML(variant, el.dataset.placement === 'settings')
-  const fresh = holder.querySelector<HTMLElement>('.dsh-bloom-menu')
-  const cur = el.querySelector<HTMLElement>('.dsh-bloom-menu')
+  const fresh = holder.querySelector<HTMLElement>('[data-bloom-picker]')
+  const cur = el.querySelector<HTMLElement>('[data-bloom-picker]')
   // 版本区块展开与否也要带过去：新模板里它默认收起
   const moreWasOpen = el.querySelector<HTMLElement>('.dsh-bloom-more')?.getAttribute('aria-expanded') === 'true'
   if (fresh && cur) {
@@ -373,7 +382,10 @@ function rerenderMenu(el: HTMLElement, variant: string) {
     cur.replaceWith(fresh)
   }
   const freshMode = holder.querySelector('.dsh-bloom-mode')
-  if (freshMode) el.querySelector('.dsh-bloom-mode')?.replaceWith(freshMode)
+  if (freshMode) {
+    el.querySelector('.dsh-bloom-mode')?.replaceWith(freshMode)
+    el.lang = getLang()
+  }
   if (moreWasOpen) {
     const more = el.querySelector<HTMLElement>('.dsh-bloom-more')
     const body = el.querySelector<HTMLElement>('.dsh-bloom-more-body')
@@ -773,7 +785,7 @@ export function buildSwitcherEl(initialVariant, inSettings = false) {
   el.addEventListener('keydown', (e: KeyboardEvent) => {
     const menu = el.querySelector<HTMLElement>('.dsh-bloom-menu')
     const trigger = el.querySelector<HTMLElement>('.dsh-bloom-trigger')
-    const options = [...menu.querySelectorAll<HTMLElement>('.dsh-bloom-option')]
+    const options = [...el.querySelectorAll<HTMLElement>('.dsh-bloom-option')]
     const idx = options.indexOf(document.activeElement as HTMLElement)
     const meteorChoice = e.target instanceof Element ? e.target.closest<HTMLButtonElement>('[data-meteor-color]') : null
     if (meteorChoice && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
@@ -918,9 +930,6 @@ export function buildSwitcherEl(initialVariant, inSettings = false) {
 export function mountSwitcher(host: HTMLElement): () => void {
   const el = buildSwitcherEl(document.body.dataset.bloomVariant ?? readVariant(), true)
   host.append(el)
-  refreshUpdateBadge()
-  renderDshUpdate()
-  void checkDshLatest()
   return () => {
     disposeSwitcher(el)
     el.remove()
