@@ -112,7 +112,7 @@ const before = await page.evaluate(measure);
   } finally { await browser.close() }
 })
 
-test('Bloom removes plugin row hover fills and preserves native workspace group spacing', async t => {
+test('Bloom removes plugin row hover fills and preserves native workspace position and spacing', async t => {
   const browser = await chromium.launch({ executablePath: process.env.BLOOM_CHROMIUM_PATH || undefined, args: ['--no-sandbox'] })
   t.after(() => browser.close())
   const page = await browser.newPage()
@@ -127,6 +127,8 @@ test('Bloom removes plugin row hover fills and preserves native workspace group 
       .fixture_cardLink:hover { background: rgb(220, 220, 220); }
       .fixture_cardLink:active { background: rgb(200, 200, 200); }
       .fixture_cardOpen:focus-visible { outline: 2px solid blue; }
+      .fixture_panelList { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+      .fixture_panelList > * { min-height: 32px; }
       .fixture_groupSection + .fixture_groupSection { margin-top: 4px; }
       * { transition: none !important; }
     </style>
@@ -144,20 +146,33 @@ test('Bloom removes plugin row hover fills and preserves native workspace group 
       </ul>
     </section>
     <aside class="fixture_sidebarCol">
+      <nav class="fixture_panelList">
+        <div class="fixture_panelEntry">Plugins</div>
+        <div class="fixture_panelEntry">Automation tasks</div>
+        <button>More</button>
+      </nav>
       <div class="fixture_groupSection">Workspace one</div>
       <div class="fixture_groupSection">Workspace two</div>
     </aside>
   `)
   const pluginRow = page.locator('[data-plugin-package]')
   const workspaceGroups = page.locator('.fixture_groupSection')
-  const groupGap = () => workspaceGroups.evaluateAll(([first, second]) =>
-    second.getBoundingClientRect().top - first.getBoundingClientRect().bottom)
+  const workspaceLayout = () => workspaceGroups.evaluateAll(([first, second]) => {
+    const sidebar = first.parentElement
+    const nav = sidebar.querySelector('nav')
+    const firstGroup = first.getBoundingClientRect()
+    return {
+      navHeight: nav.getBoundingClientRect().height,
+      firstGroupOffset: firstGroup.top - sidebar.getBoundingClientRect().top,
+      groupGap: second.getBoundingClientRect().top - firstGroup.bottom,
+    }
+  })
   const background = locator => locator.evaluate(node => getComputedStyle(node).backgroundColor)
 
   await pluginRow.hover()
   assert.equal(await background(pluginRow), 'rgb(220, 220, 220)')
-  const nativeGap = await groupGap()
-  assert.equal(nativeGap, 4)
+  const nativeLayout = await workspaceLayout()
+  assert.deepEqual(nativeLayout, { navHeight: 100, firstGroupOffset: 108, groupGap: 4 })
 
   await page.addStyleTag({ content: css })
   await page.evaluate(() => { document.body.dataset.bloomVariant = 'mist' })
@@ -167,7 +182,7 @@ test('Bloom removes plugin row hover fills and preserves native workspace group 
 
   for (const dark of [false, true]) {
     await page.evaluate(dark => document.body.toggleAttribute('data-ds-dark-theme', dark), dark)
-    assert.equal(await groupGap(), nativeGap)
+    assert.deepEqual(await workspaceLayout(), nativeLayout)
     for (const row of [pluginRow, page.locator('[data-plugin-item]')]) {
       const inner = row.locator('.fixture_cardMain')
       await inner.hover()

@@ -213,10 +213,12 @@ div[class*="_dock"] [class*="_preview"] {
 
    ⚠️ 2026-10-02：DSH 0.2.0 里 _toolRow 匹配 0 个元素（scripts/dsh-drift.mjs 报出来的），
    新名候选是 _toolChanges。用 :is() 并列，权重不变（:is 取最具体项，仍等于单个 [class*=]）。
-   两个都写是因为旧构建（Web UI / 更早的桌面版）仍在用老名。 */
+   两个都写是因为旧构建（Web UI / 更早的桌面版）仍在用老名。
+
+   左侧栏的导航条目也会匹配 _panel，透明边框会撑高导航并下推工作区列表。 */
 div[class*="_card"],
 div:is([class*="_toolRow"], [class*="_toolChanges"]),
-div[class*="_panel"] {
+div[class*="_panel"]:not(:where([class*="_sidebarCol"] *)) {
   border-radius: 10px;
   border: 1px solid transparent;
   transition: border-color 0.16s ease, background 0.16s ease;
