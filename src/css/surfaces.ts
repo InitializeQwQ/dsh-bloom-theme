@@ -65,7 +65,7 @@ ${scope('::before')} {
 }
 /* 只减淡输入卡底色；保留文字、描边和其他玻璃面的原有配色。 */
 @media screen and (not (prefers-contrast: more)) and (forced-colors: none) and (prefers-reduced-transparency: no-preference) {
-  ${ROOT}[data-bloom-composer-tint="20"] { --bloom-composer-strength: 64%; }
+  ${ROOT}[data-bloom-composer-tint="20"] { --bloom-composer-strength: 48%; }
   ${ROOT}[data-bloom-composer-tint="40"] { --bloom-composer-strength: 73%; }
   ${ROOT}[data-bloom-composer-tint="80"] { --bloom-composer-strength: 91%; }
   ${ROOT}[data-bloom-composer-tint="100"] { --bloom-composer-strength: 100%; }
