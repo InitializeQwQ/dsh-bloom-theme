@@ -189,6 +189,41 @@ test('mouse modality hides button focus token but not editable input focus', asy
   }
 })
 
+test('text fields retain their native focus treatment without a second outline', async t => {
+  const page = await setup(t)
+  await page.evaluate(() => document.body.insertAdjacentHTML('beforeend', `
+    <style>
+      .fixture-field { display:block; outline:none; }
+      .fixture-field:focus { box-shadow:inset 0 0 0 0.5px var(--dsw-focus-ring-color); }
+    </style>
+    <button id="before-fields">Before fields</button>
+    <input type="text" class="fixture-field" aria-label="Package name">
+    <input type="search" class="fixture-field" aria-label="Search">
+    <input class="fixture-field" aria-label="Path" readonly value="/example">
+    <textarea class="fixture-field" aria-label="Notes"></textarea>
+    <div class="fixture-field" contenteditable="true" aria-label="Editor">Text</div>
+    <div class="fixture-field" role="textbox" tabindex="0" aria-label="Custom field">Text</div>
+  `))
+  const focusedStyles = () => page.locator('.fixture-field:focus').evaluate(field => {
+    const style = getComputedStyle(field)
+    return { outline: style.outlineStyle, offset: style.outlineOffset, shadow: style.boxShadow }
+  })
+  const packageName = page.getByRole('textbox', { name: 'Package name' })
+  await packageName.click()
+  const pointer = await focusedStyles()
+  assert.equal(pointer.outline, 'none')
+  assert.equal(pointer.offset, '0px')
+  assert.match(pointer.shadow, /0\.5px inset/)
+
+  await page.keyboard.press('Shift+Tab')
+  assert.equal(await page.locator('#before-fields').evaluate(button => getComputedStyle(button).outlineStyle), 'solid')
+  for (const name of ['Package name', 'Search', 'Path', 'Notes', 'Editor', 'Custom field']) {
+    await page.keyboard.press('Tab')
+    assert.equal(await page.locator(':focus').getAttribute('aria-label'), name)
+    assert.deepEqual(await focusedStyles(), pointer)
+  }
+})
+
 test('coarse pointer grows tappable rows', async t => {
   const page = await setup(t, { touch: true })
   const height = await page.evaluate(() => {
