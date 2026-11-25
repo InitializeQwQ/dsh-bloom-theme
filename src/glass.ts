@@ -11,7 +11,7 @@ export type EffectiveGlassMode = GlassMaterial | 'solid'
 const KEY = `${STORAGE_KEY}-glass-mode`
 const COMPOSER_TRANSPARENCY_KEY = `${STORAGE_KEY}-composer-transparent`
 const COMPOSER_TINT_KEY = `${STORAGE_KEY}-composer-tint`
-export const COMPOSER_TINTS = [30, 50, 70] as const
+export const COMPOSER_TINTS = [20, 40, 60, 80, 100] as const
 export type ComposerTint = typeof COMPOSER_TINTS[number]
 
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
@@ -36,10 +36,11 @@ export function readComposerTransparency(): boolean {
 
 export function readComposerTint(): ComposerTint {
   if (composerTint === undefined) {
-    composerTint = 50
+    composerTint = 60
     try {
-      const value = Number(localStorage.getItem(COMPOSER_TINT_KEY))
-      composerTint = COMPOSER_TINTS.find(level => level === value) ?? 50
+      const saved = Number(localStorage.getItem(COMPOSER_TINT_KEY))
+      const value = saved === 30 ? 20 : saved === 50 ? 60 : saved === 70 ? 100 : saved
+      composerTint = COMPOSER_TINTS.find(level => level === value) ?? 60
     } catch {}
   }
   return composerTint

@@ -794,6 +794,15 @@ body[data-ds-dark-theme][data-bloom-ambience-dark="galaxy"] .dsh-bloom-row[data-
 body[data-ds-dark-theme][data-bloom-ambience-dark="galaxy"] .dsh-bloom-group[data-meteor-group],
 body[data-ds-dark-theme][data-bloom-ambience-dark="galaxy"] .dsh-bloom-group__body[data-meteor-group] { display: block; }
 
+/* 输入框颜色深浅：左右标签 + 五档可点击/拖动滑杆。 */
+.dsh-bloom-tint-control { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; }
+.dsh-bloom-tint-label { font-size: 11px; color: var(--dsw-alias-label-secondary, #777); white-space: nowrap; }
+.dsh-bloom-tint-track { position: relative; display: inline-flex; align-items: center; width: 150px; height: 28px; }
+.dsh-bloom-tint-track::before { content: ''; position: absolute; left: 8px; right: 8px; height: 2px; border-radius: 99px; background: var(--bloom-hairline-strong); }
+.dsh-bloom-tint-track input { position: relative; z-index: 2; width: 100%; margin: 0; accent-color: var(--bloom-accent); cursor: pointer; }
+.dsh-bloom-tint-dots { pointer-events: none; position: absolute; z-index: 1; left: 8px; right: 8px; display: flex; justify-content: space-between; }
+.dsh-bloom-tint-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--dsw-alias-bg-layer-2, #fff); border: 1px solid var(--bloom-hairline-strong); }
+
 /* 自动换色下拉：跟卡片右对齐 */
 .dsh-bloom-row .dsh-bloom-rotation__select {
   appearance: none;
