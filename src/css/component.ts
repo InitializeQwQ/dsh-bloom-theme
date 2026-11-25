@@ -41,7 +41,6 @@ body[data-bloom-variant] [class*="_scrollBody"] {
    之前只给了右侧一道竖线，内部还是一整块死板的纯色。补足：顶部氛围淡染、
    会话项冷光态、分组标题层级。 */
 [class*="_sidebarCol"] {
-  position: relative;
   /* v0.15 注：原本想加 inset 描边 + 顶部内高光（"莫兰迪纸边"感），但发现
      src/css/glass.ts 137 行已经有 v0.10.x 的 box-shadow 选择器 —— 它的 inset
      描边用 **纯白色 rgba(255,255,255, .22)**，是 owner 给 10 套变体做的"统一白色
@@ -69,7 +68,6 @@ body[data-bloom-variant] [class*="_scrollBody"] {
 }
 [class*="_sidebarCol"] [role="treeitem"][aria-selected="true"] [class*="_title"],
 [class*="_sidebarCol"] [class*="_selected"] [class*="_title"] {
-  font-weight: 500;
   color: var(--dsw-alias-label-primary);
 }
 /* v0.10.x（owner 反馈「脏」）：左侧 3px 蓝竖条是脏点 —— 莫兰迪克制不应有这种色块。
@@ -86,9 +84,8 @@ body[data-bloom-variant] [class*="_scrollBody"] {
    看上去像「盒中盒」（2026-09-29 实拍）。详见 §去硬边框 那条的同款注解。 */
 [class*="_sidebarCol"] button[class*="_newSession"] {
   background: color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 92%);
-  border: 0;
+  border-color: transparent;
   border-radius: 10px;
-  transition: background 180ms ease;
 }
 [class*="_sidebarCol"] button[class*="_newSession"]:hover {
   background: color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 86%);
@@ -98,12 +95,8 @@ body[data-bloom-variant] [class*="_scrollBody"] {
   color: var(--dsw-alias-label-primary);
 }
 
-/* 分组标题（工作区 / 未分组）：拉开与条目的层级。
-   _sectionLabel 是 DSH 实际用的类名片段（qDHVXG_sectionLabel），
-   12px + 字距让它明显是「标签」而不是一行内容。 */
+/* 工作区分组标题沿用宿主文字尺寸与字距。 */
 [class*="_sidebarCol"] [class*="_sectionLabel"] {
-  font-size: 12px;
-  letter-spacing: 0.06em;
   color: var(--dsw-alias-label-caption);
 }
 
@@ -125,13 +118,7 @@ body[data-bloom-variant] [class*="_scrollBody"] {
   color: var(--dsw-alias-label-secondary);
 }
 
-/* 会话列表细滚动条：4px、冷光 thumb、hover 才加强。
-   系统默认滚动条在 280px 的窄栏里非常抢；DSH 自己只有全局 alias 变量，
-   没有给侧栏列表单独收窄。 */
-/* [LES-13] 会话列表只纵向滚动，横向溢出一律裁掉 */
-[class*="_sidebarCol"] [class*="_list"] { overflow-x: hidden; }
-[class*="_sidebarCol"] [class*="_list"]::-webkit-scrollbar { width: 4px; height: 0; }
-[class*="_sidebarCol"] [class*="_list"]::-webkit-scrollbar-track { background: transparent; }
+/* 只给原生滚动条换色。 */
 [class*="_sidebarCol"] [class*="_list"]::-webkit-scrollbar-thumb {
   background: color-mix(in oklch, var(--bloom-accent) 30%, transparent);
   border-radius: 999px;
@@ -151,8 +138,6 @@ body[data-bloom-variant] [class*="_scrollBody"] {
    ::after / ::before 双层（线 + 光晕），因为 box-shadow inset 会被 glass.ts
    的 _sidebarCol 规则覆盖掉（cascade 顺序），改用伪元素才不会被吃掉。 */
 body[data-bloom-variant] [class*="_sidebarCol"] {
-  /* 宿主那条 0.5px 实线优先级更高，不加 !important 关不掉（实测覆盖后仍是 0.5px） */
-  border-right: 0;
   background-color: color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 96%);
   background-image: linear-gradient(
     180deg,
@@ -170,7 +155,7 @@ body[data-bloom-variant] [class*="_sidebarCol"] {
 
 /* 底部设置区与会话列表之间补一道分隔，让「设置」不像是最后一条会话 */
 [class*="_sidebarCol"] [class*="_footer"] {
-  border-top: 1px solid var(--bloom-hairline);
+  box-shadow: inset 0 1px 0 var(--bloom-hairline);
 }
 
 /* 顶栏下沿冷光线 —— 标题区与消息流之间的分界，比实色 border 轻。
@@ -197,35 +182,17 @@ div[class*="_dock"]:has(> [class*="_preview"]) {
   background: color-mix(in oklch, var(--dsw-alias-bg-layer-2, #fff), transparent 22%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--bloom-hairline);
+  box-shadow: inset 0 0 0 1px var(--bloom-hairline);
   border-radius: 12px;
 }
 div[class*="_dock"] [class*="_preview"] {
   color: var(--dsw-alias-label-secondary);
 }
 
-/* 消息卡 / 工具调用行：只给轻描边，不给阴影 —— 数量多（一次会话 30+ 个），
-   加长距阴影会把整个消息流糊成一片。全部限定 div，否则会命中 SVG 元素。 */
-/* 工具调用行：常态不描边，hover 才亮起。
-   常驻边框有两个毛病：① 同为工具行，可展开的 Bash 有框、Read/Edit 没框，视觉不一致；
-   ② 折叠行实测 748×26，画成圆角框又扁又长，且边框贴着内容区边缘而行内图标有内缩，
-   看起来像个输入框。保留 transparent 占位是为了 hover 时不发生布局跳动。
-
-   ⚠️ 2026-10-02：DSH 0.2.0 里 _toolRow 匹配 0 个元素（scripts/dsh-drift.mjs 报出来的），
-   新名候选是 _toolChanges。用 :is() 并列，权重不变（:is 取最具体项，仍等于单个 [class*=]）。
-   两个都写是因为旧构建（Web UI / 更早的桌面版）仍在用老名。
-
-   左侧栏的导航条目也会匹配 _panel，透明边框会撑高导航并下推工作区列表。 */
-div[class*="_card"],
-div:is([class*="_toolRow"], [class*="_toolChanges"]),
-div[class*="_panel"]:not(:where([class*="_sidebarCol"] *)) {
-  border-radius: 10px;
-  border: 1px solid transparent;
-  transition: border-color 0.16s ease, background 0.16s ease;
-}
-div[class*="_card"]:hover,
+/* 用内阴影绘制消息卡和工具行的悬停描边，保留宿主尺寸。 */
+div[class*="_scrollBody"] div[class*="_card"]:hover,
 div:is([class*="_toolRow"], [class*="_toolChanges"]):hover {
-  border-color: var(--bloom-hairline);
+  box-shadow: inset 0 0 0 1px var(--bloom-hairline);
   background: rgba(var(--bloom-morandi), 0.05);
 }
 /* 展开态：DSH 的终端区（_terminal）自带 1px 边框 + 12px 圆角，
@@ -236,6 +203,7 @@ div[class*="_card"]:has(pre),
 div[class*="_card"]:has([class*="_terminal"]):hover,
 div[class*="_card"]:has(pre):hover {
   border-color: transparent;
+  box-shadow: none;
   background: transparent;
 }
 
@@ -296,7 +264,7 @@ body[data-bloom-variant]:not([data-ds-dark-theme])[data-bloom-typing="true"] div
    必须限定在 composer 内 —— 裸的 [class*="_card"] 会命中 30+ 个消息卡片，
    把长距阴影糊得到处都是。 */
 div[class*="_composer"] div[class*="_card"] {
-  border: 1px solid var(--bloom-hairline);
+  border-color: var(--bloom-hairline);
   border-radius: 16px;
   /* 三层：顶部内高光（模拟光从上方打来）+ 长距柔影 + 外侧冷辉 */
   box-shadow:
@@ -314,10 +282,7 @@ div[class*="_composer"] div[class*="_card"]:focus-within {
 }
 
 /* 消息气泡：柔和圆角 + 近距阴影，脱离"贴在背景上"的平面感。
-   限定 div：DSH 的全局 Tooltip 是 span[class*="_bubble"]（见 glass.ts 同名注释），
-   不能吃到气泡的圆角/阴影/入场动画 —— 尤其动画：带 !important 的 bloom-fade-up
-   会在 420ms 里盖掉 tooltip 的定位 transform（[data-side=right] 的 translateY(-50%)），
-   气泡先偏移再跳回，也是"提示看不清"的一部分。 */
+   限定 div，避开宿主的 span[class*="_bubble"] Tooltip。 */
 div[class*="_bubble"] {
   border-radius: 14px;
   /* v0.15：纸感厚度——顶 1px 高光 + 已有短距阴影 = 上下对照。
@@ -363,14 +328,13 @@ body[data-bloom-variant] [data-variant="think"][data-expanded] [data-open] [data
 [class*="_markdown"] h2::after { width: 56px; }
 [class*="_markdown"] h3::after { width: 40px; background: linear-gradient(90deg, rgba(var(--bloom-morandi), 0.28), transparent); }
 
-hr {
-  border: 0;
-  height: 1px;
+[class*="_markdown"] hr {
+  border-color: transparent;
   background: linear-gradient(90deg, transparent, var(--bloom-hairline-strong), transparent);
 }
 
-blockquote {
-  border-left: 3px solid rgba(var(--bloom-morandi), 0.55);
+[class*="_markdown"] blockquote {
+  border-left-color: rgba(var(--bloom-morandi), 0.55);
   border-radius: 12px;
   background: rgba(var(--bloom-morandi), 0.07);
   box-shadow: var(--bloom-shadow-sm);
@@ -388,13 +352,11 @@ code {
    而且 pre 背景透明，阴影直接投进容器内部形成一圈脏边。
    md-code-block 是 DSH 的全局类名（非 CSS Modules hash），可以稳定引用。 */
 .md-code-block {
-  border: 1px solid var(--bloom-hairline);
-  box-shadow: var(--bloom-shadow-sm);
-  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--bloom-hairline), var(--bloom-shadow-sm);
 }
 .md-code-block pre,
 pre.shiki {
-  border: 0;
+  border-color: transparent;
   border-radius: 0;
   box-shadow: none;
 }
@@ -407,55 +369,7 @@ pre code {
   background: transparent;
 }
 
-/* 表格：严格限定在 [_tableScroll] 容器内，只动 markdown 渲染的聊天表格，
-   不影响 DSH 会话列表（Y0dWHa_table）这类其他用途的 <table>。
-   DSH 原生规则：th/td 各有一条 border-bottom，th:first-child 与 td:first-child
-   的 padding-left:0（让首列对齐正文），空 cell 仍撑出 100px min-width。
-   三个肉眼短板：① 表头只有加粗无底色，与主体混淆；② 无列分隔，像列表不像表；
-   ③ 空 cell 100px 留白让残缺行（如 P1 状态列空）看着"半残废"。
-
-   ⚠️ 2026-10-02：DSH 0.2.0 把容器名从 _tableScroll 改成了 _tablePane
-   （scripts/dsh-drift.mjs 报出来的：这个语义名在 0.2.0 里匹配 0 个元素，
-   也就是下面这一整块表格样式一直在静默失效）。用 :is() 并列新旧名 ——
-   :is() 的权重取最具体的那一项，和单个 [class*=] 相同，所以这次改动
-   没有动任何规则的权重。 */
-:is([class*="_tableScroll"], [class*="_tablePane"]) {
-  /* #76/#62: the scroll viewport may be wider than its table (native wide-table
-     lead padding). Paint the table, otherwise this creates an empty framed tail. */
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  /* 2026-10-24 · #52/#48：容器被主题加了边框圆角，但 DSH 0.2.0 把 _tableScroll
-     改名 _tablePane 后不再保证原生横向滚动 —— 宽表格直接戳穿聊天气泡边界（#52），
-     多列表格越界后边框圆角失去裁切、格线在角部戳出读作「变形」（#48）。
-     overflow-x:auto 同时给回「滚动能力」和「圆角裁切」（auto 会裁剪并尊重 radius，
-     hidden 只裁不滚会废掉滚动，两个都不能用错）。
-     注意：overflow-x 非 visible 时另一轴的 visible 会被强制成 auto，
-     对纯展示表格无副作用。旧名 _tableScroll 原生已是滚动容器，重复声明无害。 */
-  overflow-x: auto;
-}
-
-/* 上面那条会在层叠里输给 DSH 自己的 .md-table-wide 修饰类（实测 2026-10-24：
-   ._tableScroll_哈希.md-table-wide => overflow-x:hidden，权重 (0,2,0) > 单属性选择器
-   的 (0,1,0)，宽表被无声裁掉右半边）。双写属性选择器把权重抬到 (0,2,0) 打平，
-   再靠注入序取胜 —— 插件 <style> 在 DSH <link> 之后注入，平权重时后者赢，
-   这也是本主题其它同权重覆盖能生效的同一前提。hidden 改 auto 对「本就放得下」
-   的表格零影响（无溢出就没有滚动条），只在内容实在放不下时把「裁掉」换成「可滚」。 */
-[class*="_tableScroll"][class*="_tableScroll"],
-[class*="_tablePane"][class*="_tablePane"] {
-  overflow-x: auto;
-}
-/* DSH 0.2.1: >=4 columns uses md-table-wide, otherwise tableFill.
-   Keep the wide branch intrinsic, including short four-column tables (#62).
-   Match the native hover/focus specificity so its hidden/scroll + padding
-   swap cannot change the viewport height or expose a bottom white band (#76). */
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]).md-table-wide,
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]).md-table-wide:is(:hover, :focus-visible) {
-  overflow-x: auto;
-  padding-bottom: 0;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-}
+/* 只为聊天表格换色，宽度、单元格内边距和滚动行为由宿主决定。 */
 /* [LES-08b] 会话 tab 轨迹区滚动条：几何保留，滑块平时全透明，悬停才显色 */
 body[data-bloom-variant] main [class*="_scroll"]::-webkit-scrollbar-thumb,
 body[data-bloom-variant] div[class*="_tableScroll"]::-webkit-scrollbar-thumb,
@@ -476,39 +390,13 @@ body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]).md-
   scrollbar-color: color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 62%) transparent;
 }
 :is([class*="_tableScroll"], [class*="_tablePane"]) > table {
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid var(--bloom-hairline);
-  border-radius: 10px;
   background: rgba(var(--bloom-morandi), 0.02);
-  overflow: clip;
 }
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]).md-table-wide > table {
-  width: max-content;
-  min-width: 0;
-  max-width: none;
-}
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]):not(.md-table-wide) > table {
-  width: 100%;
-  max-width: none;
-}
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]) th,
-body[data-bloom-variant] :is([class*="_tableScroll"], [class*="_tablePane"]) td {
+:is([class*="_tableScroll"], [class*="_tablePane"]) :is(th, td) {
   border-color: var(--bloom-hairline);
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-bottom-width: 1px;
 }
-:is([class*="_tableScroll"], [class*="_tablePane"]) th:last-child,
-:is([class*="_tableScroll"], [class*="_tablePane"]) td:last-child { border-right: 0; }
-:is([class*="_tableScroll"], [class*="_tablePane"]) tr:last-child th,
-:is([class*="_tableScroll"], [class*="_tablePane"]) tr:last-child td { border-bottom: 0; }
-:is([class*="_tableScroll"], [class*="_tablePane"]) th:first-child,
-:is([class*="_tableScroll"], [class*="_tablePane"]) td:first-child { padding-left: 16px; }
 :is([class*="_tableScroll"], [class*="_tablePane"]) thead th {
   background: rgba(var(--bloom-morandi), 0.10);
-  font-weight: 600;
-  border-bottom-width: 1px;
   border-bottom-color: var(--bloom-hairline-strong);
   color: var(--dsw-alias-label-secondary, currentColor);
 }
@@ -650,27 +538,15 @@ body[data-bloom-variant] button:has(> [data-text-shimmer]) [data-step-process-ic
 [data-bloom-think] {
   display: none !important;
 }
-/* 左侧冷光竖线 + 降低透明度。
-   ⚠️ 竖线错位的坑：思考块是一串平铺的兄弟元素（p / ul / ol / h3 / div），各标签
-   默认 margin-left 不同（实测 p 被置为 0、ul 为 2px），不强制归零就会让竖线
-   错开 2px、连不成一条直线。所以 margin-left 必须 !important 压平。
-   另：用背景色块代替竖线会让每段变成一张「卡片」，且色块边缘直接贴住文字，
-   观感更差 —— 竖线 + 内边距才是对的做法。 */
+/* 思考段落保留宿主缩进，竖线通过内阴影绘制。 */
 [data-bloom-think-body] {
   opacity: 0.62;
-  border-left: 2px solid var(--bloom-hairline);
-  margin-left: 0 !important;
-  padding-left: 14px;
-  transition: opacity 0.2s ease, border-color 0.2s ease;
+  box-shadow: inset 2px 0 var(--bloom-hairline);
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
 }
 [data-bloom-think-body]:hover {
   opacity: 0.92;
-  border-left-color: var(--bloom-hairline-strong);
-}
-/* 列表要保留编号/圆点的缩进，否则 padding 被覆盖后编号会贴到竖线上 */
-ul[data-bloom-think-body],
-ol[data-bloom-think-body] {
-  padding-left: 38px;
+  box-shadow: inset 2px 0 var(--bloom-hairline-strong);
 }
 
 /* ═══ 6. 微交互动效系统（v0.5.0）══════════════════════════════════
@@ -693,14 +569,11 @@ body {
   --bloom-dur-slow: 280ms;
 }
 
-/* [LES-13] 侧栏会话行：只淡染与按下微缩，不做位移，避免撑出横向滚动条 */
+/* 侧栏会话行使用颜色反馈。 */
 [class*="_sidebarCol"] [role="treeitem"],
 [class*="_sidebarCol"] [class*="_sessionRow"] {
-  transition:
-    background var(--bloom-dur-fast) var(--bloom-ease),
-    transform var(--bloom-dur-fast) var(--bloom-ease);
+  transition: background var(--bloom-dur-fast) var(--bloom-ease);
 }
-[class*="_sidebarCol"] [role="treeitem"]:active { transform: scale(0.996); }
 
 /* 会话行：圆角 + hover 淡染，靠留白区分，不描边不画网格 */
 [class*="_sidebarCol"] [class*="_sessionRow"] {
@@ -738,8 +611,7 @@ div[class*="_composer"] div[class*="_card"]:hover {
 
 /* 主题自己的按钮：按下微缩（明确「点到了」） */
 .dsh-bloom-trigger:active,
-.dsh-bloom-option:active,
-[class*="_sidebarCol"] button:active { transform: scale(0.985); }
+.dsh-bloom-option:active { transform: scale(0.985); }
 
 /* ═══ 焦点环兜底：统一成主题色 ═══
    DSH 有些控件（例如设置面板右上角的关闭按钮）没定义自己的 focus 样式，
@@ -796,62 +668,25 @@ div[class*="_composer"] div[class*="_card"]:hover {
   50%      { opacity: 1; }
 }
 
-/* ═══ 7. 全站统一入场系统 (v0.10.x) ═════════════════════════════════
- *
- * owner 反馈：「除了深度求索中的文字有动效外，别的几乎是没有任何吸引到我的动画」
- * ——所以这一节专门把页面"活起来"：消息气泡/工具行/侧栏/顶栏首次入场都走
- * 同一条 keyframe，长度/缓动全走 §6 的 token；只动 opacity + transform，
- * prefers-reduced-motion 下由下方媒体查询清零。
- *
- * 为什么用 \`animation\` 而不是 transition + \`:not([hidden])\`：
- *   后者在 React 里反复 toggle hidden 时 transition 不会重新计算；
- *   且「元素插入」这件事 transition 表达不了。\`animation\` 在元素 mount 那一刻
- *   唯一一次触发，正好对应「第一次出现在视野中」的语义；React 重渲染复用
- *   DOM 节点时也不会重放，不会污染正常状态切换。
- */
-@keyframes bloom-fade-up {
-  /* v0.15：入场位移从 16 → 12px——320ms 配合 12px 是行业甜区，
-     16px 配合 320ms 会"顿"一下才到位。形状不变，只是更轻。 */
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: none; }
+/* ═══ 7. 入场动效 ═══════════════════════════════════════════════════ */
+@keyframes bloom-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes bloom-fade-down {
-  /* v0.15：顶栏从顶部滑下，从 -12 → -8px，配合更短的 200ms 让"开页"更利落。 */
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: none; }
 }
 
-/* 消息气泡 / 工具调用行 / 滚动体内的卡片 —— 整页停留时间最长的地方。
-   气泡限定 div（span 的 _bubble 是全局 Tooltip，动画会盖掉它的定位 transform，
-   见 §3 气泡圆角处的注释）。
-   \`:not(:has(...))\` 排除含终端 / 代码块的卡：它们是「展开后才有」的元素，
-   跟着外层一起进，单独动会让代码块在父卡里飘。
-   !important 必要：DSH 在这些元素上有自己的 \`animation\`（比如呼吸 loader），
-   后注入的会赢；用 !important 让 Bloom 的入场动画压过它。 */
+/* 消息气泡和工具行原位淡入；终端与代码卡片沿用宿主动效。 */
 div[class*="_bubble"],
 div:is([class*="_toolRow"], [class*="_toolChanges"]),
 div[class*="_scrollBody"] > div[class*="_card"]:not(:has([class*="_terminal"])):not(:has(pre)) {
-  animation: bloom-fade-up 240ms var(--bloom-ease-out) backwards !important;
+  animation: bloom-fade-in 240ms var(--bloom-ease-out) backwards !important;
 }
-/* 侧栏会话行：页面打开时整组淡入（一次性，不是循环） */
-[class*="_sidebarCol"] [role="treeitem"] {
-  animation: bloom-fade-up 200ms var(--bloom-ease-out) backwards !important;
-}
-/* 顶栏 —— 从顶部滑下比从下方滑上更贴「页面打开」的语义。
-   :has(> _tabs) 是"真顶栏"的唯一判据，见下方 §去硬边框 里的说明。 */
-header[class*="_header"] {
-  animation: bloom-fade-down 240ms var(--bloom-ease-out) backwards !important;
-}
-/* 顶栏两按钮入场（newSession / Bloom trigger）：transform / box-shadow
-   加到原 transition 里 —— 原来 WIP 只 transition 了 background，
-   加 lift 不需要新 transition 字段，hover 时一并平滑。
-   ⚠️ 原来还有一条 [class*="_sessionLogButton"]：2026-09-29 实测该语义名在
-   DSH 全部包里 0 命中（顶栏现在只挂 Bloom 切换器），属于死规则，已删。 */
-button[class*="_newSession"],
 .dsh-bloom-trigger {
   animation: bloom-fade-down 200ms var(--bloom-ease-out) backwards !important;
 }
-button[class*="_newSession"]:hover,
 .dsh-bloom-trigger:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 14px -6px var(--bloom-glow);
@@ -937,7 +772,6 @@ body[data-bloom-motion="off"] [class*="_composer"] div[class*="_card"]:has([clas
 body[data-bloom-motion="off"] div[class*="_bubble"],
 body[data-bloom-motion="off"] div:is([class*="_toolRow"], [class*="_toolChanges"]),
 body[data-bloom-motion="off"] div[class*="_scrollBody"] > div[class*="_card"],
-body[data-bloom-motion="off"] button[class*="_newSession"],
 body[data-bloom-motion="off"] [class*="_scrollBody"]:not(:has(div[class*="_bubble"]))::before,
 body[data-bloom-motion="off"] ::view-transition-old(root),
 body[data-bloom-motion="off"] ::view-transition-new(root) {
@@ -954,7 +788,6 @@ body[data-bloom-motion="off"] ::view-transition-new(root) {
   div[class*="_bubble"],
   div:is([class*="_toolRow"], [class*="_toolChanges"]),
   div[class*="_scrollBody"] > div[class*="_card"],
-  button[class*="_newSession"],
   [class*="_scrollBody"]:not(:has(div[class*="_bubble"]))::before,
   ::view-transition-old(root), ::view-transition-new(root) {
     animation: none !important;
@@ -974,7 +807,7 @@ body[data-bloom-motion="off"] ::view-transition-new(root) {
 /* [LES-03] 顶栏下沿辉光：使用外阴影自然衰减，避免伪元素裁剪硬边 */
 body[data-bloom-variant] header[class*="_header"] {
   position: relative;
-  border-bottom: 0;
+  border-bottom-color: transparent;
   /* 强度实测定档：45% 时边界跳变 32 级、仍读成一条线；78% 跳变 10 级，
      只剩"上面比下面亮一点"的错觉，这才是分隔而不是分割。 */
   box-shadow: 0 28px 48px -28px color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 78%);
@@ -997,7 +830,7 @@ body[data-bloom-variant] header[class*="_header"]::after {
       transparent 92%），这里不再重复 —— 两处各写一遍、靠特异度决出胜负，
       正是这个仓库 0.10.x 清过一次的老毛病（见 §会话条目 的注解）。
    ③ 三个按钮用同一个值（92% / hover 86%），差一档就会看出"哪个重了一档"。 */
-body[data-bloom-variant] button[class*="_newSession"],
+body[data-bloom-variant] button[class*="_newSession"] { border-color: transparent; }
 body[data-bloom-variant] .dsh-bloom-trigger {
   border-color: transparent;
   /* transform + box-shadow 也进 transition：§7 hover 抬升要平滑，不能 snap。
@@ -1016,7 +849,7 @@ body[data-bloom-variant] .dsh-bloom-trigger:hover {
 
 /* 侧栏底部操作区：上边框 → 向上扩散的极淡阴影 */
 body[data-bloom-variant] [class*="_footerActions"] {
-  border-top: 0;
+  border-top-color: transparent;
   box-shadow: 0 -6px 10px -8px color-mix(in oklch, var(--bloom-accent, #6b8f71), transparent 78%);
 }
 

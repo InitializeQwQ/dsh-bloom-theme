@@ -92,12 +92,15 @@ body[data-bloom-variant]:not([data-ds-dark-theme]):not([data-bloom-ambience-ligh
   mask-repeat: no-repeat;
 }
 
+/* 带状态行的输入区让原生状态行直接显示页面背景。 */
 body[data-bloom-variant] [class*="_root"] [class*="_composerSeat"] {
   background-image: none;
+}
+body[data-bloom-variant] [class*="_root"] [class*="_composerSeat"]:where(:not(:has([data-composer-dock]))) {
   /* Keep the fixed backdrop aligned to the viewport. */
   will-change: auto;
 }
-body[data-bloom-variant] [class*="_root"] [class*="_composerSeat"]::before {
+body[data-bloom-variant] [class*="_root"] [class*="_composerSeat"]:where(:not(:has([data-composer-dock])))::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -111,7 +114,7 @@ body[data-bloom-variant] [class*="_root"] [class*="_composerSeat"]::before {
 }
 
 
-body[data-bloom-variant]:not([data-ds-dark-theme]) [class*="_root"] [class*="_composerSeat"]::before {
+body[data-bloom-variant]:not([data-ds-dark-theme]) [class*="_root"] [class*="_composerSeat"]:where(:not(:has([data-composer-dock])))::before {
   background: rgba(255, 255, 255, .28);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000);
   mask-image: linear-gradient(to bottom, transparent, #000);

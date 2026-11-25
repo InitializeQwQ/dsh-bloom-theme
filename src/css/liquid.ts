@@ -16,10 +16,12 @@ export function liquidSurfaces(s: string, dark = false): string {
   const highlight = dark ? 'rgba(255,255,255,.20)' : 'rgba(255,255,255,.8)'
   const css = `
 /* [LES-27] */
+:where(${s} [class*="_sidebarCol"]) { position: relative; }
+${s} header[class*="_header"],
+${s} div[class*="_composer"] div[class*="_card"] { position: relative; }
 ${s} header[class*="_header"],
 ${s} [class*="_sidebarCol"],
 ${s} div[class*="_composer"] div[class*="_card"] {
-  position: relative;
   background: transparent;
   border-color: transparent;
   backdrop-filter: none;
@@ -44,9 +46,6 @@ ${s} div[class*="_composer"] div[class*="_card"]::before {
 ${s} [class*="_sidebarCol"],
 ${s} header[class*="_header"] {
   box-shadow: none;
-}
-${s} [class*="_centerCol"] {
-  border-left-color: transparent;
 }
 ${s} [class*="_sidebarCol"]::before,
 ${s} header[class*="_header"]::before {

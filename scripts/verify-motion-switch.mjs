@@ -85,7 +85,7 @@ console.log(motionEffective ? '✓ 动效开关规则已生效（animation 计�
 await page.evaluate(() => {
   const card = document.querySelector('.dsh_card_wrap')
   // 用非 important 的内联动画：CSS 的 animation: none !important 才压得住它
-  card.style.animation = 'bloom-fade-up 2s linear infinite'
+  card.style.animation = 'bloom-fade-in 2s linear infinite'
 })
 await page.waitForTimeout(400)
 const on = await page.evaluate(() => document.getAnimations()

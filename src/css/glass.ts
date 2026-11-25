@@ -84,8 +84,10 @@ body[data-ds-dark-theme] div[class*="_dock"]:has(> [class*="_preview"]) {
    且不得引入 isolation / transform / filter / contain / will-change。
    输入卡的 conversation.input.overlay 槽也会注入 fixed 元素（如 dsh-convmap），
    必须遵守同一判据，不能把滤镜放回卡片本体（issue #15）。 */
-body[data-bloom-variant] [class*="_sidebarCol"] {
+:where(body[data-bloom-variant] [class*="_sidebarCol"]) {
   position: relative;
+}
+body[data-bloom-variant] [class*="_sidebarCol"] {
   /* v0.10.x：之前 transparent !important 让侧栏和 body 完全同色，没有容器感。
      改成带 accent tint 的底色 —— 6% accent 混进 bg-layer-1，肉眼能看出
      "这块区域有自己的颜色"，但又不至于抢内容。 */
@@ -133,16 +135,6 @@ body[data-ds-dark-theme] [class*="_sidebarCol"] {
 }
 body[data-ds-dark-theme] [class*="_sidebarCol"]::before {
   background-color: var(--dsw-specific-sidebar-fill, #101010);
-}
-
-/* v0.6.2: 「对话 / 轨迹」tab 字号上限保护 —— 用户在窄屏 / 浏览器 zoom>100% 下
-   反馈 tab 视觉上被放大、撑得过宽。DSH 原生 tab 是 wSkVaW_tab（默认 13px），
-   这里兜底 clamp 到 14px，避免任何状态下字号异常撑开。 */
-header[class*="_header"] > div[class*="_tabs"] [class*="_tab"] {
-  font-size: clamp(13px, 0.9vw, 14px) !important;
-  font-weight: 500 !important;
-  letter-spacing: normal !important;
-  white-space: nowrap !important;
 }
 
 /* ═══ 输入卡片（主角）—— 最清晰的一块玻璃，focus 时玻璃边缘点亮 ═══

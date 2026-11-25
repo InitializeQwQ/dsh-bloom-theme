@@ -36,9 +36,12 @@ ${ROOT}[data-bloom-glass="matte"] {
   --bloom-surface-image: ${grain(true)};
 }
 ${ROOT}[data-bloom-glass="matte"][data-ds-dark-theme] { --bloom-surface-image: ${grain(false)}; }
-${scope()} {
+/* 给玻璃伪元素提供定位基准，窄窗抽屉的位置和层级沿用宿主规则。 */
+:where(${scope()}) {
   position: relative;
   z-index: 0;
+}
+${scope()} {
   background: transparent;
   background-image: none;
   border-color: transparent;
@@ -63,7 +66,12 @@ ${scope('::before')} {
 ${ROOT}[data-bloom-composer-opaque] div[class*="_composer"] div[class*="_card"] {
   --bloom-surface-fill: var(--dsw-alias-bg-layer-1, #fff);
   --bloom-surface-filter: none;
-  --bloom-surface-image: none;
+}
+/* 实色底上的毛玻璃保留柔和散射光，磨砂和液态玻璃沿用颗粒与反光。 */
+@media screen and (not (prefers-contrast: more)) and (forced-colors: none) {
+  ${ROOT}[data-bloom-composer-opaque][data-bloom-glass="frosted"] div[class*="_composer"] div[class*="_card"] {
+    --bloom-surface-image: linear-gradient(145deg, rgba(255,255,255,.13), transparent 72%);
+  }
 }
 ${scope(':hover')},
 ${scope(':focus-within')} { border-color: transparent; box-shadow: none; }

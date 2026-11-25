@@ -52,7 +52,7 @@ test('send control is a readable glass bead across materials and adapts to contr
       const rim=getComputedStyle(document.querySelector('.demo_primary'),'::before')
       return {background,foreground,width:cs.width,height:cs.height,radius:cs.borderRadius,image:cs.backgroundImage,filter:cs.backdropFilter,rimMask:rim.maskImage}
     },bead.toString('base64'))
-    assert.equal(result.width,'36px');assert.equal(result.height,'36px');assert.equal(result.radius,'50%')
+    assert.equal(result.width,'32px');assert.equal(result.height,'32px');assert.equal(result.radius,'50%')
     assert.ok(result.background.every(v=>v>210),`${material}: bead should be pale, got ${result.background}`)
     assert.ok(ratio(result.foreground,result.background)>=3,`${material}: icon contrast ${ratio(result.foreground,result.background)}`)
     assert.match(result.image,/radial-gradient/)

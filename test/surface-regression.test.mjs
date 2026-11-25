@@ -68,14 +68,22 @@ test('host table branches and themed surfaces survive hover, focus, and palette 
   try {
     const page = await browser.newPage({ viewport: { width: 1200, height: 900 } })
     await page.goto('about:blank')
-    await page.evaluate(({html,css}) => {document.head.innerHTML='<style>'+css+'</style>';document.body.innerHTML=html;document.body.dataset.bloomVariant='mint'}, {html, css:hostCSS + '\n' + css})
-const before = await page.evaluate(measure);
+    await page.setContent(`<style>${hostCSS}</style>${html}`)
+    const geometry = ({ width, height, table, paddingBottom, overflow, gutter, maxScroll }) =>
+      ({ width, height, table, paddingBottom, overflow, gutter, maxScroll })
+    const native = await page.evaluate(measure)
+    await page.hover('#wide')
+    const nativeHover = await page.evaluate(measure)
+    await page.mouse.move(1100, 700)
+    await page.addStyleTag({ content: css })
+    await page.evaluate(() => { document.body.dataset.bloomVariant = 'mint' })
+    const before = await page.evaluate(measure)
+    for (const kind of ['short', 'wide', 'fill']) {
+      assert.deepEqual(geometry(before[kind]), geometry(native[kind]), `${kind} geometry comes from the host`)
+    }
   assert.ok(before.short.table < before.short.width, 'short wide table stays intrinsic');
   assert.ok(before.wide.table > before.wide.width, 'long wide table keeps horizontal overflow');
   assert.ok(Math.abs(before.fill.table - before.fill.width) < 2, 'tableFill spans viewport');
-  assert.equal(before.wide.paddingBottom, '0px');
-  assert.equal(before.wide.overflow, 'auto');
-  assert.equal(before.wide.gutter, 'stable');
   assert.equal(before.wide.background, 'rgba(0, 0, 0, 0)');
   assert.equal(before.wide.border, '0px');
   assert.equal(before.wide.backdrop, 'none');
@@ -86,8 +94,7 @@ const before = await page.evaluate(measure);
   assert.equal(before.reasoningPosition, 'sticky');
   await page.hover('#wide');
   const hovered = await page.evaluate(measure);
-  assert.equal(hovered.wide.height, before.wide.height, 'hover cannot add/remove scrollbar padding');
-  assert.equal(hovered.wide.overflow, 'auto');
+  assert.deepEqual(geometry(hovered.wide), geometry(nativeHover.wide), 'hover follows the native scrolling and padding');
   assert.match(before.wide.thumb, /^transparent transparent$|rgba\(0, 0, 0, 0\) rgba\(0, 0, 0, 0\)/, 'wide-table scrollbar is invisible at rest');
   assert.notEqual(hovered.wide.thumb, before.wide.thumb, 'wide-table scrollbar appears on hover');
   await page.hover('#sidelist [role="treeitem"]');
@@ -96,7 +103,7 @@ const before = await page.evaluate(measure);
   await page.evaluate(() => {const el=document.getElementById('wide');el.scrollLeft=999;});
   assert.ok(await page.evaluate(() => document.getElementById('wide').scrollLeft > 0), 'wide table actually scrolls');
   await page.focus('#wide');
-  assert.equal((await page.evaluate(measure)).wide.height, before.wide.height, 'keyboard focus keeps viewport geometry');
+  assert.equal((await page.evaluate(measure)).wide.height, nativeHover.wide.height, 'keyboard focus follows native viewport geometry');
   await page.hover('#preview');
   const preview = await page.evaluate(measure);
   assert.equal(preview.preview, before.preview, 'diff preview stays opaque on hover');
@@ -112,7 +119,7 @@ const before = await page.evaluate(measure);
   } finally { await browser.close() }
 })
 
-test('Bloom removes plugin row hover fills and preserves native workspace position and spacing', async t => {
+test('Bloom removes plugin row hover fills and preserves native plugin and workspace layout', async t => {
   const browser = await chromium.launch({ executablePath: process.env.BLOOM_CHROMIUM_PATH || undefined, args: ['--no-sandbox'] })
   t.after(() => browser.close())
   const page = await browser.newPage()
@@ -156,6 +163,11 @@ test('Bloom removes plugin row hover fills and preserves native workspace positi
     </aside>
   `)
   const pluginRow = page.locator('[data-plugin-package]')
+  const pluginLayout = () => page.locator('[data-plugin-panel], [data-plugin-panel] :is(li, .fixture_cardHead, .fixture_cardMain)')
+    .evaluateAll(nodes => nodes.map(node => {
+      const { x, y, width, height } = node.getBoundingClientRect()
+      return { x, y, width, height }
+    }))
   const workspaceGroups = page.locator('.fixture_groupSection')
   const workspaceLayout = () => workspaceGroups.evaluateAll(([first, second]) => {
     const sidebar = first.parentElement
@@ -172,6 +184,7 @@ test('Bloom removes plugin row hover fills and preserves native workspace positi
   await pluginRow.hover()
   assert.equal(await background(pluginRow), 'rgb(220, 220, 220)')
   const nativeLayout = await workspaceLayout()
+  const nativePluginLayout = await pluginLayout()
   assert.deepEqual(nativeLayout, { navHeight: 100, firstGroupOffset: 108, groupGap: 4 })
 
   await page.addStyleTag({ content: css })
@@ -183,6 +196,7 @@ test('Bloom removes plugin row hover fills and preserves native workspace positi
   for (const dark of [false, true]) {
     await page.evaluate(dark => document.body.toggleAttribute('data-ds-dark-theme', dark), dark)
     assert.deepEqual(await workspaceLayout(), nativeLayout)
+    assert.deepEqual(await pluginLayout(), nativePluginLayout)
     for (const row of [pluginRow, page.locator('[data-plugin-item]')]) {
       const inner = row.locator('.fixture_cardMain')
       await inner.hover()

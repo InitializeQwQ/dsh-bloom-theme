@@ -244,7 +244,11 @@ test('saved rotation starts with the theme even when settings have not opened', 
 test('input transparency changes only the composer and survives reload and teardown', async t => {
   const page = await setupPage(t)
   const apply = () => page.evaluate(() => {
-    document.body.insertAdjacentHTML('beforeend', '<div class="fixture_composer"><div class="fixture_card"><textarea></textarea></div></div>')
+    document.body.insertAdjacentHTML('beforeend', `<div class="fixture_root" data-phase="active">
+      <div class="fixture_composerSeat" data-composer-seat style="will-change:transform">
+        <div class="fixture_composer"><div class="fixture_card"><textarea></textarea></div><div data-composer-dock>Context usage</div></div>
+      </div>
+    </div>`)
     document.querySelector('header').classList.add('fixture_header')
     window.applyModule(window.mockLocale)
   })
@@ -252,33 +256,42 @@ test('input transparency changes only the composer and survives reload and teard
     const composer = document.querySelector('.fixture_composer .fixture_card')
     const layer = getComputedStyle(composer, '::before')
     const header = getComputedStyle(document.querySelector('.fixture_header'), '::before')
+    const seat = document.querySelector('[data-composer-seat]')
+    const dock = getComputedStyle(document.querySelector('[data-composer-dock]'))
     const paint = document.createElement('span')
     paint.style.backgroundColor = 'var(--dsw-alias-bg-layer-1, #fff)'
     composer.append(paint)
     const solid = getComputedStyle(paint).backgroundColor
     paint.remove()
     return { filter: layer.backdropFilter, image: layer.backgroundImage, color: layer.backgroundColor, solid,
+      dock: { background: dock.backgroundColor, seatOverlay: getComputedStyle(seat, '::before').content,
+        seatBackground: getComputedStyle(seat).backgroundImage, willChange: getComputedStyle(seat).willChange },
       header: { filter: header.backdropFilter, color: header.backgroundColor } }
   })
   await apply()
   await mountSettings(page)
   const toggle = page.getByRole('switch', { name: '输入框透明' })
   assert.equal(await toggle.getAttribute('aria-checked'), 'true')
+  const materialImages = new Set()
   for (const material of ['frosted', 'matte', 'liquid']) {
     await page.locator(`[data-glass="${material}"]`).click()
     const before = await surface()
     assert.notEqual(before.filter, 'none')
+    assert.deepEqual(before.dock, { background: 'rgba(0, 0, 0, 0)', seatOverlay: 'none', seatBackground: 'none', willChange: 'transform' })
     await toggle.press('Space')
     const opaque = await surface()
     assert.equal(await toggle.getAttribute('aria-checked'), 'false')
     assert.equal(opaque.filter, 'none')
-    assert.equal(opaque.image, 'none')
+    assert.notEqual(opaque.image, 'none')
+    materialImages.add(opaque.image)
+    assert.deepEqual(opaque.dock, before.dock)
     assert.equal(opaque.color, opaque.solid)
     assert.deepEqual(opaque.header, before.header)
     assert.equal(await page.locator(`[data-glass="${material}"]`).getAttribute('aria-checked'), 'true')
     await toggle.click()
     assert.deepEqual(await surface(), before)
   }
+  assert.equal(materialImages.size, 3, 'each material keeps a distinct opaque surface')
   await toggle.click()
   await page.reload()
   await page.addScriptTag({ content: outputFiles[0].text })

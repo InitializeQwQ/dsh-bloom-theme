@@ -57,6 +57,73 @@ test('macOS host sidebar tint does not cover the glass surface', async t => {
   assert.equal(result.image,'none','host fixed blue gradient must not cover theme glass')
 })
 
+test('the macOS conversation seam retains its native divider and header geometry', async t => {
+  const page = await setup(t, true)
+  await page.evaluate(() => {
+    document.documentElement.dataset.platform = 'darwin'
+    const frame = document.createElement('div')
+    frame.className = 'seam_frame'
+    frame.style.cssText = 'display:grid;grid-template-columns:220px 1fr'
+    frame.innerHTML = `<aside class="seam_sidebarCol"></aside><main class="seam_centerCol">
+      <header class="seam_header"><div class="seam_tabs"><button class="seam_tab">Chat</button></div></header>
+    </main>`
+    const host = document.createElement('style')
+    host.textContent = '[data-platform="darwin"] .seam_centerCol { border-left:1px solid rgb(88,97,109); overflow:hidden } .seam_header { min-height:40px } .seam_tab { font: 13px system-ui }'
+    document.head.append(host)
+    document.body.prepend(frame)
+  })
+  const measure = () => page.locator('.seam_frame').evaluate(frame => {
+    const center = frame.querySelector('.seam_centerCol')
+    const sidebar = frame.querySelector('.seam_sidebarCol').getBoundingClientRect()
+    const header = frame.querySelector('.seam_header').getBoundingClientRect()
+    const tab = frame.querySelector('.seam_tab').getBoundingClientRect()
+    const css = getComputedStyle(center)
+    return { divider: css.borderLeftColor, dividerWidth: css.borderLeftWidth, seam: header.left - sidebar.right,
+      headerTop: header.top, headerHeight: header.height, tabWidth: tab.width, tabHeight: tab.height }
+  })
+  await page.evaluate(() => { delete document.body.dataset.bloomVariant })
+  const native = await measure()
+  assert.equal(native.seam, 1)
+  for (const material of ['liquid', 'frosted', 'matte']) {
+    await page.evaluate(material => {
+      document.body.dataset.bloomVariant = 'mist'
+      document.body.dataset.bloomGlass = material
+    }, material)
+    assert.deepEqual(await measure(), native, material)
+  }
+})
+
+test('a narrow host sidebar keeps its drawer positioning and stacking order', async t => {
+  const page = await setup(t, false)
+  await page.evaluate(() => {
+    const sidebar = document.querySelector('.x_sidebarCol')
+    const frame = document.createElement('div')
+    frame.dataset.sidebarDrawer = ''
+    sidebar.before(frame)
+    frame.append(sidebar)
+    const host = document.createElement('style')
+    host.textContent = '[data-sidebar-drawer] { position: relative; } [data-sidebar-drawer] > .x_sidebarCol { position: absolute; z-index: 71; inset: 0 auto 0 0; }'
+    document.head.prepend(host)
+  })
+  const sidebar = page.locator('.x_sidebarCol')
+  const geometry = () => sidebar.evaluate(el => {
+    const { x, y, width, height } = el.getBoundingClientRect()
+    const { position, zIndex } = getComputedStyle(el)
+    return { x, y, width, height, position, zIndex }
+  })
+  await page.evaluate(() => { delete document.body.dataset.bloomVariant })
+  const native = await geometry()
+  assert.equal(native.position, 'absolute')
+  assert.equal(native.zIndex, '71')
+  for (const material of ['liquid', 'frosted', 'matte']) {
+    await page.evaluate(material => {
+      document.body.dataset.bloomVariant = 'mist'
+      document.body.dataset.bloomGlass = material
+    }, material)
+    assert.deepEqual(await geometry(), native, material)
+  }
+})
+
 for (const dark of [false, true]) {
   test(`${dark ? 'dark' : 'light'} shell uses shared pseudo-element glass in each material`, async t => {
     const page = await setup(t, dark)

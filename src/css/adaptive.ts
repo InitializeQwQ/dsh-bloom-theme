@@ -27,8 +27,8 @@ function diffuseSurfaces(s: string, matte: boolean, dark: boolean): string {
     : `inset 0 1px 0 rgba(255,255,255,${dark ? '.16' : '.62'}), 0 8px 24px -18px rgba(0,0,0,.2)`
   return `
 ${s} { --bloom-glass-blur: ${matte ? '12px' : '24px'}; }
+:where(${scope(s, SHELLS)}) { position: relative; }
 ${scope(s, SHELLS)} {
-  position: relative;
   background: transparent;
   border-color: transparent;
   backdrop-filter: none;
@@ -67,7 +67,6 @@ ${s} header[class*="_header"] > div[class*="_tabs"] {
   background: transparent; border-color: transparent; box-shadow: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-${s} [class*="_centerCol"] { border-left-color: transparent; }
 ${s} [class*="_sidebarCol"] [class*="_root"]:has(> [class*="_regionArea"]),
 ${s} [class*="_sidebarCol"] :is([class*="_regionArea"], [class*="_listArea"], [class*="_treeBody"], [class*="_list"], [class*="_fade"]) { background: none; }
 ${s} [class*="_sidebarCol"] [class*="_footerActions"],

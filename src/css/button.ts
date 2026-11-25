@@ -1,11 +1,7 @@
 export const BUTTON_CSS = `
 /* [LES-35] 仅输入框 trailing 内的发送/停止键是圆珠；审批卡也在 composer 内，不能命中它的文字主按钮。 */
 body[data-bloom-variant]:not([data-ds-dark-theme]) div[class*="_composer"] div[class*="_trailing"] button[class*="_primary"] {
-  width: 36px;
-  height: 36px;
-  border: 0;
   border-radius: 50%;
-  padding: 0;
   color: color-mix(in oklch, var(--bloom-accent, #666) 70%, #7b7b7b);
   background-color: transparent;
   background-image:
@@ -23,11 +19,7 @@ body[data-bloom-variant]:not([data-ds-dark-theme]) div[class*="_composer"] div[c
     linear-gradient(145deg, color-mix(in oklch, var(--bloom-motion-1, var(--bloom-accent)) 8%, rgba(255,255,255,.95)), color-mix(in oklch, var(--bloom-motion-2, var(--bloom-accent)) 16%, rgba(255,255,255,.84)));
 }
 body[data-bloom-variant][data-ds-dark-theme] div[class*="_composer"] div[class*="_trailing"] button[class*="_primary"] {
-  width: 36px;
-  height: 36px;
-  border: 0;
   border-radius: 50%;
-  padding: 0;
   color: var(--dsw-alias-label-primary, #eee);
   background-color: transparent;
   background-image:
@@ -67,8 +59,7 @@ body[data-bloom-variant] div[class*="_composer"] div[class*="_trailing"] button[
   html body[data-bloom-variant]:not([data-bloom-glass]) div[class*="_composer"] div[class*="_trailing"] button[class*="_primary"] {
     background: var(--dsw-alias-bg-layer-1, #fff);
     color: var(--dsw-alias-label-primary, #222);
-    border: 1px solid currentColor;
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px currentColor;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -78,8 +69,7 @@ body[data-bloom-variant] div[class*="_composer"] div[class*="_trailing"] button[
   html body[data-bloom-variant]:is([data-ds-dark-theme],:not([data-ds-dark-theme])) div[class*="_composer"] div[class*="_trailing"] button[class*="_primary"] {
     background: var(--dsw-alias-bg-layer-1, Canvas);
     color: var(--dsw-alias-label-primary, CanvasText);
-    border: 1px solid currentColor;
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px currentColor;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
