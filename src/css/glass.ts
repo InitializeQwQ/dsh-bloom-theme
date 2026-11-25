@@ -431,9 +431,13 @@ body[data-bloom-variant] [data-plugin-bar][data-compact]::before {
   mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.7) 70%, transparent 100%);
 }
 
-/* 插件列表保留点击和键盘焦点反馈，悬停时去掉整行底色。 */
-body[data-bloom-variant] li[data-plugin-package][data-plugin-status]:hover:not(:active) {
+/* 插件列表的整行底色来自宿主，内部卡片描边来自 Bloom 的通用卡片样式。 */
+body[data-bloom-variant] [data-plugin-panel] li:is([data-plugin-package], [data-plugin-item]):hover:not(:active) {
   background-color: transparent;
+}
+body[data-bloom-variant] [data-plugin-panel] li:is([data-plugin-package], [data-plugin-item]) div[class*="_card"]:hover {
+  background-color: transparent;
+  border-color: transparent;
 }
 
 /* ═══ dshmarket 吸顶搜索区：实底色带 → 毛玻璃（#136）══════════════

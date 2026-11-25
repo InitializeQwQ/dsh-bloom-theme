@@ -118,18 +118,31 @@ test('Bloom removes plugin row hover fills and preserves native workspace group 
   const page = await browser.newPage()
   await page.setContent(`
     <style>
-      body { --bloom-accent: rgb(80, 130, 90); }
+      body {
+        --bloom-accent: rgb(80, 130, 90);
+        --bloom-morandi: 80, 130, 90;
+        --bloom-hairline: rgba(80, 130, 90, .2);
+        --bloom-hairline-strong: rgba(80, 130, 90, .4);
+      }
       .fixture_cardLink:hover { background: rgb(220, 220, 220); }
       .fixture_cardLink:active { background: rgb(200, 200, 200); }
       .fixture_cardOpen:focus-visible { outline: 2px solid blue; }
       .fixture_groupSection + .fixture_groupSection { margin-top: 4px; }
+      * { transition: none !important; }
     </style>
-    <ul>
-      <li class="fixture_card fixture_cardLink" data-plugin-package="dsh-bloom-theme" data-plugin-status="installed">
-        <button class="fixture_cardOpen">Open plugin</button>
-      </li>
-      <li class="fixture_cardLink" id="other">Other interactive row</li>
-    </ul>
+    <section data-plugin-panel>
+      <ul>
+        <li class="fixture_card fixture_cardLink" data-plugin-package="dsh-bloom-theme">
+          <div class="fixture_cardHead"><div class="fixture_cardMain">
+            <button class="fixture_cardOpen">Open plugin</button>
+          </div></div>
+        </li>
+        <li class="fixture_card fixture_cardLink" data-plugin-item="builtin">
+          <div class="fixture_cardHead"><div class="fixture_cardMain">Built-in plugin</div></div>
+        </li>
+        <li class="fixture_cardLink" id="other">Other interactive row</li>
+      </ul>
+    </section>
     <aside class="fixture_sidebarCol">
       <div class="fixture_groupSection">Workspace one</div>
       <div class="fixture_groupSection">Workspace two</div>
@@ -155,11 +168,18 @@ test('Bloom removes plugin row hover fills and preserves native workspace group 
   for (const dark of [false, true]) {
     await page.evaluate(dark => document.body.toggleAttribute('data-ds-dark-theme', dark), dark)
     assert.equal(await groupGap(), nativeGap)
-    await pluginRow.hover()
-    assert.equal(await background(pluginRow), 'rgba(0, 0, 0, 0)')
-    await page.mouse.down()
-    assert.equal(await background(pluginRow), 'rgb(200, 200, 200)')
-    await page.mouse.up()
+    for (const row of [pluginRow, page.locator('[data-plugin-item]')]) {
+      const inner = row.locator('.fixture_cardMain')
+      await inner.hover()
+      assert.equal(await background(row), 'rgba(0, 0, 0, 0)')
+      for (const card of [row.locator('.fixture_cardHead'), inner]) {
+        assert.equal(await background(card), 'rgba(0, 0, 0, 0)')
+        assert.equal(await card.evaluate(node => getComputedStyle(node).borderTopColor), 'rgba(0, 0, 0, 0)')
+      }
+      await page.mouse.down()
+      assert.equal(await background(row), 'rgb(200, 200, 200)')
+      await page.mouse.up()
+    }
     const other = page.locator('#other')
     await other.hover()
     assert.equal(await background(other), 'rgb(220, 220, 220)')
