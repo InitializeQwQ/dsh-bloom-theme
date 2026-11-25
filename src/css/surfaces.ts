@@ -63,6 +63,10 @@ ${scope('::before')} {
   backdrop-filter: var(--bloom-surface-filter);
   -webkit-backdrop-filter: var(--bloom-surface-filter);
 }
+/* 只减淡输入卡底色；保留文字、描边和其他玻璃面的原有配色。 */
+${ROOT}:not([data-bloom-composer-opaque]) div[class*="_composer"] div[class*="_card"]::before {
+  background-color: color-mix(in oklch, var(--bloom-surface-fill) 82%, transparent);
+}
 ${ROOT}[data-bloom-composer-opaque] div[class*="_composer"] div[class*="_card"] {
   --bloom-surface-fill: var(--dsw-alias-bg-layer-1, #fff);
   --bloom-surface-filter: none;
