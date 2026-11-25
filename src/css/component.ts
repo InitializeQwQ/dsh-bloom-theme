@@ -307,26 +307,7 @@ body[data-bloom-variant] [data-variant="think"][data-expanded] [data-open] [data
 }
 
 /* ═══ 3. Markdown 排版质感 ═════════════════════════════════════════
-   照搬原版手法：标题渐变短横、hr 两端消隐、引用块左侧主色条。 */
-[class*="_markdown"] h1,
-[class*="_markdown"] h2,
-[class*="_markdown"] h3 {
-  position: relative;
-}
-[class*="_markdown"] h1::after,
-[class*="_markdown"] h2::after,
-[class*="_markdown"] h3::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -0.34em;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(var(--bloom-morandi), 0.45), transparent);
-}
-[class*="_markdown"] h1::after { width: 76px; height: 3px; }
-[class*="_markdown"] h2::after { width: 56px; }
-[class*="_markdown"] h3::after { width: 40px; background: linear-gradient(90deg, rgba(var(--bloom-morandi), 0.28), transparent); }
+   保留 hr 两端消隐和引用块左侧主色条。 */
 
 [class*="_markdown"] hr {
   border-color: transparent;
