@@ -93,7 +93,6 @@ import { applyMotion, readMotion } from './dom.js'
 import {
   effectiveGlassMode,
   GLASS_MODES,
-  COMPOSER_TINTS,
   readComposerTint,
   writeComposerTint,
   readComposerTransparency,
@@ -142,8 +141,6 @@ export function buildDetailEl(): HTMLElement {
   return el
 }
 
-const composerTintLabel = (index: number) => tr(['浅', '偏浅', '适中', '偏深', '深'][index])
-
 /** 细节行 HTML —— 质感 / 背景 / 流星 / 自动换色 / 动效。 */
 export function buildDetailRowsHTML(): string {
   const rotationOptions = ROTATION_MINUTES.map((m) =>
@@ -175,14 +172,13 @@ export function buildDetailRowsHTML(): string {
   const motionOn = readMotion()
   const transparencyLabel = tr('输入框透明')
   const tint = readComposerTint()
-  const tintLabel = composerTintLabel(COMPOSER_TINTS.indexOf(tint))
 
   return `${groupTitle(tr('质感'))}
     <div class="dsh-bloom-group__body">
       ${row('glass', tr('材质'), `<span class="dsh-bloom-icon-seg" role="radiogroup" aria-label="${tr('质感')}">${glassChoices}</span>`)}
       <p class="dsh-bloom-hint" data-glass-hint hidden></p>
       ${row('input', transparencyLabel, `<button type="button" class="dsh-bloom-composer-switch" role="switch" aria-label="${transparencyLabel}" aria-checked="${readComposerTransparency()}" data-composer-transparency></button>`)}
-      ${row('input', tr('输入框颜色深浅'), `<span class="dsh-bloom-tint-control"><span class="dsh-bloom-tint-label">${tr('浅')}</span><span class="dsh-bloom-tint-track"><input type="range" min="0" max="4" step="1" value="${COMPOSER_TINTS.indexOf(tint)}" data-composer-tint aria-label="${tr('输入框颜色深浅')}" aria-valuetext="${tintLabel}"><span class="dsh-bloom-tint-dots" aria-hidden="true">${COMPOSER_TINTS.map(() => '<i></i>').join('')}</span></span><span class="dsh-bloom-tint-label">${tr('深')}</span></span>`)}
+      ${row('input', tr('输入框颜色深浅'), `<span class="dsh-bloom-tint-control"><span class="dsh-bloom-tint-label">${tr('浅')}</span><span class="dsh-bloom-tint-track"><input type="range" min="0" max="100" step="any" value="${tint}" data-composer-tint aria-label="${tr('输入框颜色深浅')}" aria-valuetext="${Math.round(tint)}%"></span><span class="dsh-bloom-tint-label">${tr('深')}</span></span>`)}
     </div>
     ${groupTitle(tr('背景'))}
     <div class="dsh-bloom-group__body">
@@ -248,14 +244,14 @@ function buildAboutHTML(): string {
  * 埋点在各自分支里打。
  */
 export function bindDetailEvents(el: HTMLElement): () => void {
+  const onTintInput = (e: Event) => {
+    const slider = (e.target as HTMLElement).closest<HTMLInputElement>('[data-composer-tint]')
+    if (!slider) return
+    writeComposerTint(slider.valueAsNumber)
+    slider.setAttribute('aria-valuetext', `${Math.round(readComposerTint())}%`)
+  }
   const onChange = (e: Event) => {
     const target = e.target as HTMLElement
-    const tintControl = target.closest<HTMLInputElement>('[data-composer-tint]')
-    if (tintControl) {
-      const tint = COMPOSER_TINTS[Number(tintControl.value)]
-      if (tint !== undefined) { writeComposerTint(tint); tintControl.setAttribute('aria-valuetext', composerTintLabel(Number(tintControl.value))) }
-      return
-    }
     const control = target.closest<HTMLSelectElement>('.dsh-bloom-rotation__select')
     if (control) {
       setRotationMinutes(Number(control.value))
@@ -356,10 +352,12 @@ export function bindDetailEvents(el: HTMLElement): () => void {
       return
     }
   }
+  el.addEventListener('input', onTintInput)
   el.addEventListener('change', onChange)
   el.addEventListener('click', onClick)
   syncGlassRow(el)
   return () => {
+    el.removeEventListener('input', onTintInput)
     el.removeEventListener('change', onChange)
     el.removeEventListener('click', onClick)
   }

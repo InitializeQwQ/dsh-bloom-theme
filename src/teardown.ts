@@ -16,7 +16,7 @@ import { setVersionUpdatesActive } from './version.js'
 import { clearAppearanceSync } from './appearance.js'
 
 /** Bloom 写在 body / 消息节点上的 data-* 属性。 */
-const BODY_ATTRS = ['data-bloom-variant', 'data-bloom-glass', 'data-bloom-composer-opaque', 'data-bloom-composer-tint', 'data-bloom-ambience-dark', 'data-bloom-ambience-light', 'data-bloom-typing', 'data-bloom-update', 'data-bloom-motion']
+const BODY_ATTRS = ['data-bloom-variant', 'data-bloom-glass', 'data-bloom-composer-opaque', 'data-bloom-ambience-dark', 'data-bloom-ambience-light', 'data-bloom-typing', 'data-bloom-update', 'data-bloom-motion']
 const NODE_ATTRS = ['data-bloom-think', 'data-bloom-think-body', 'data-bloom-live-turn']
 
 export function teardownBloom(): void {
@@ -39,6 +39,7 @@ export function teardownBloom(): void {
     .forEach((n) => n.remove())
 
   const body = document.body
+  body?.style.removeProperty('--bloom-composer-strength')
   if (body) for (const a of BODY_ATTRS) body.removeAttribute(a)
   for (const a of NODE_ATTRS) document.querySelectorAll(`[${a}]`).forEach((n) => n.removeAttribute(a))
   const root = document.documentElement

@@ -803,8 +803,6 @@ body[data-ds-dark-theme][data-bloom-ambience-dark="galaxy"] .dsh-bloom-group__bo
 .dsh-bloom-tint-track input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border: 1px solid CanvasText; border-radius: 50%; background: var(--bloom-accent, Highlight); }
 .dsh-bloom-tint-track input::-moz-range-thumb { box-sizing: border-box; width: 16px; height: 16px; border: 1px solid CanvasText; border-radius: 50%; background: var(--bloom-accent, Highlight); }
 .dsh-bloom-tint-track input:focus-visible { outline: 2px solid var(--bloom-accent, Highlight); outline-offset: 2px; }
-.dsh-bloom-tint-dots { pointer-events: none; position: absolute; z-index: 1; left: 4px; right: 4px; display: flex; justify-content: space-between; }
-.dsh-bloom-tint-dots i { box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; background: Canvas; border: 1px solid var(--dsw-alias-label-secondary, CanvasText); }
 
 /* 自动换色下拉：跟卡片右对齐 */
 .dsh-bloom-row .dsh-bloom-rotation__select {

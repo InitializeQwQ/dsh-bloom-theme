@@ -10,9 +10,8 @@ export type EffectiveGlassMode = GlassMaterial | 'solid'
 
 const KEY = `${STORAGE_KEY}-glass-mode`
 const COMPOSER_TRANSPARENCY_KEY = `${STORAGE_KEY}-composer-transparent`
-const COMPOSER_TINT_KEY = `${STORAGE_KEY}-composer-tint`
-export const COMPOSER_TINTS = [20, 40, 60, 80, 100] as const
-export type ComposerTint = typeof COMPOSER_TINTS[number]
+const LEGACY_COMPOSER_TINT_KEY = `${STORAGE_KEY}-composer-tint`
+const COMPOSER_TINT_KEY = `${STORAGE_KEY}-composer-tint-percent`
 
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
 export const GLASS_MODES: GlassMaterial[] = ['frosted', 'matte', 'liquid']
@@ -20,7 +19,7 @@ export const GLASS_MODES: GlassMaterial[] = ['frosted', 'matte', 'liquid']
 let cached: GlassMode | undefined
 let needsMigration = false
 let composerTransparent: boolean | undefined
-let composerTint: ComposerTint | undefined
+let composerTint: number | undefined
 
 /** Existing profiles keep the glass input surface until the user switches it off. */
 export function readComposerTransparency(): boolean {
@@ -34,13 +33,16 @@ export function readComposerTransparency(): boolean {
   return composerTransparent
 }
 
-export function readComposerTint(): ComposerTint {
+export function readComposerTint(): number {
   if (composerTint === undefined) {
-    composerTint = 60
+    composerTint = 82
     try {
-      const saved = Number(localStorage.getItem(COMPOSER_TINT_KEY))
-      const value = saved === 30 ? 20 : saved === 50 ? 60 : saved === 70 ? 100 : saved
-      composerTint = COMPOSER_TINTS.find(level => level === value) ?? 60
+      const saved = localStorage.getItem(COMPOSER_TINT_KEY)
+      if (saved !== null) composerTint = normalizeComposerTint(Number(saved))
+      else {
+        const legacy: Record<string, number> = { 20: 5, 30: 5, 40: 73, 50: 82, 60: 82, 70: 100, 80: 91, 100: 100 }
+        composerTint = legacy[Number(localStorage.getItem(LEGACY_COMPOSER_TINT_KEY))] ?? 82
+      }
     } catch {}
   }
   return composerTint
@@ -48,12 +50,16 @@ export function readComposerTint(): ComposerTint {
 
 export function applyComposerTransparency(): void {
   document.body.toggleAttribute('data-bloom-composer-opaque', !readComposerTransparency())
-  document.body.dataset.bloomComposerTint = String(readComposerTint())
+  document.body.style.setProperty('--bloom-composer-strength', `${readComposerTint()}%`)
 }
 
-export function writeComposerTint(value: ComposerTint): void {
-  composerTint = value
-  try { localStorage.setItem(COMPOSER_TINT_KEY, String(value)) } catch {}
+function normalizeComposerTint(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 82
+}
+
+export function writeComposerTint(value: number): void {
+  composerTint = normalizeComposerTint(value)
+  try { localStorage.setItem(COMPOSER_TINT_KEY, String(composerTint)) } catch {}
   applyComposerTransparency()
 }
 

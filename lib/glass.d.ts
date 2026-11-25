@@ -4,15 +4,13 @@ export type GlassMaterial = 'frosted' | 'matte' | 'liquid';
 export type GlassMode = 'auto' | GlassMaterial;
 /** solid 只用于系统无障碍降级，不是用户选项。 */
 export type EffectiveGlassMode = GlassMaterial | 'solid';
-export declare const COMPOSER_TINTS: readonly [20, 40, 60, 80, 100];
-export type ComposerTint = typeof COMPOSER_TINTS[number];
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
 export declare const GLASS_MODES: GlassMaterial[];
 /** Existing profiles keep the glass input surface until the user switches it off. */
 export declare function readComposerTransparency(): boolean;
-export declare function readComposerTint(): ComposerTint;
+export declare function readComposerTint(): number;
 export declare function applyComposerTransparency(): void;
-export declare function writeComposerTint(value: ComposerTint): void;
+export declare function writeComposerTint(value: number): void;
 export declare function writeComposerTransparency(transparent: boolean): void;
 /** 读取并解析旧值；不在读取时写入存储。 */
 export declare function readGlassMode(): GlassMode;
