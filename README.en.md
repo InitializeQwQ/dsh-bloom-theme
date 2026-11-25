@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/1aa807f5-e65d-4e9f-aef4-d46b71a04a62
 
 ### Install
 
-Search for **`dsh-bloom-theme`** in DeepSeek Harness Plugins, install it, and restart when prompted. Open **Settings → Bloom** to select a palette or use **Transparent input box** under **Material** to control the composer background. Bloom follows DSH’s appearance setting for light and dark mode. An opaque input box still shows the selected material’s texture and highlights.
+Search for **`dsh-bloom-theme`** in DeepSeek Harness Plugins, install it, and restart when prompted. Open **Settings → Bloom** to select a palette or toggle **Transparent input box** under **Material**. With transparency off, the composer keeps its material’s texture and highlights, and the status bar below covers scrolling messages with a solid background. With a light ambience preset enabled, the background fades to white at the bottom. Bloom follows DSH’s appearance setting for light and dark mode.
 
 For local iteration, build the current worktree and install it into the default `desktop` profile with one command:
 

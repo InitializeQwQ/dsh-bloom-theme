@@ -274,7 +274,13 @@ test('saved rotation starts with the theme even when settings have not opened', 
 test('input transparency changes only the composer and survives reload and teardown', async t => {
   const page = await setupPage(t)
   const apply = () => page.evaluate(() => {
-    document.body.insertAdjacentHTML('beforeend', `<div class="fixture_root" data-phase="active">
+    document.body.insertAdjacentHTML('beforeend', `<style>
+      .fixture_root { --dsw-alias-bg-base: rgb(250, 230, 240); }
+      body[data-ds-dark-theme] .fixture_root { --dsw-alias-bg-base: rgb(32, 34, 40); }
+      .fixture_root[data-phase="active"] .fixture_composerSeat {
+        background-image: linear-gradient(180deg, transparent 0px, var(--dsw-alias-bg-base) 36px);
+      }
+      </style><div class="fixture_root" data-phase="active">
       <div class="fixture_composerSeat" data-composer-seat style="will-change:transform">
         <div class="fixture_composer"><div class="fixture_card"><textarea></textarea></div><div data-composer-dock>Context usage</div></div>
       </div>
@@ -294,8 +300,9 @@ test('input transparency changes only the composer and survives reload and teard
     const solid = getComputedStyle(paint).backgroundColor
     paint.remove()
     return { filter: layer.backdropFilter, image: layer.backgroundImage, color: layer.backgroundColor, solid,
+      seatBackground: getComputedStyle(seat).backgroundImage,
       dock: { background: dock.backgroundColor, seatOverlay: getComputedStyle(seat, '::before').content,
-        seatBackground: getComputedStyle(seat).backgroundImage, willChange: getComputedStyle(seat).willChange },
+        willChange: getComputedStyle(seat).willChange },
       header: { filter: header.backdropFilter, color: header.backgroundColor } }
   })
   await apply()
@@ -303,17 +310,20 @@ test('input transparency changes only the composer and survives reload and teard
   const toggle = page.getByRole('switch', { name: '输入框透明' })
   assert.equal(await toggle.getAttribute('aria-checked'), 'true')
   const materialImages = new Set()
+  const whiteFooter = /^linear-gradient\(.+rgb\(255, 255, 255\) 36px\)$/
   for (const material of ['frosted', 'matte', 'liquid']) {
     await page.locator(`[data-glass="${material}"]`).click()
     const before = await surface()
     assert.notEqual(before.filter, 'none')
-    assert.deepEqual(before.dock, { background: 'rgba(0, 0, 0, 0)', seatOverlay: 'none', seatBackground: 'none', willChange: 'transform' })
+    assert.equal(before.seatBackground, 'none')
+    assert.deepEqual(before.dock, { background: 'rgba(0, 0, 0, 0)', seatOverlay: 'none', willChange: 'transform' })
     await toggle.press('Space')
     const opaque = await surface()
     assert.equal(await toggle.getAttribute('aria-checked'), 'false')
     assert.equal(opaque.filter, 'none')
     assert.notEqual(opaque.image, 'none')
     materialImages.add(opaque.image)
+    assert.match(opaque.seatBackground, whiteFooter)
     assert.deepEqual(opaque.dock, before.dock)
     assert.equal(opaque.color, opaque.solid)
     assert.deepEqual(opaque.header, before.header)
@@ -323,10 +333,24 @@ test('input transparency changes only the composer and survives reload and teard
   }
   assert.equal(materialImages.size, 3, 'each material keeps a distinct opaque surface')
   await toggle.click()
+  const lightAmbience = page.locator('.dsh-bloom-detail [data-scheme="light"]')
+  for (const preset of ['wash', 'clear']) {
+    await lightAmbience.locator(`[data-preset="${preset}"]`).click()
+    assert.match((await surface()).seatBackground, whiteFooter)
+  }
+  await lightAmbience.locator('[data-preset="off"]').click()
+  assert.match((await surface()).seatBackground, /rgb\(250, 230, 240\) 36px\)$/)
+  await lightAmbience.locator('[data-preset="stream"]').click()
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.waitForFunction(() => document.body.hasAttribute('data-ds-dark-theme'))
+  assert.match((await surface()).seatBackground, /rgb\(32, 34, 40\) 36px\)$/)
+  await page.emulateMedia({ colorScheme: 'light' })
   await page.reload()
   await page.addScriptTag({ content: outputFiles[0].text })
   await apply()
-  assert.equal((await surface()).filter, 'none', 'stored preference is applied before settings open')
+  const restored = await surface()
+  assert.equal(restored.filter, 'none', 'stored preference is applied before settings open')
+  assert.match(restored.seatBackground, whiteFooter)
   await mountSettings(page)
   assert.equal(await page.locator('[data-composer-transparency]').getAttribute('aria-checked'), 'false')
   await page.evaluate(() => window.disposeAll())
