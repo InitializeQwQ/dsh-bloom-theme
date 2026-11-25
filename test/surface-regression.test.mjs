@@ -111,3 +111,57 @@ const before = await page.evaluate(measure);
   
   } finally { await browser.close() }
 })
+
+test('Bloom removes plugin row hover fills and preserves native workspace group spacing', async t => {
+  const browser = await chromium.launch({ executablePath: process.env.BLOOM_CHROMIUM_PATH || undefined, args: ['--no-sandbox'] })
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  await page.setContent(`
+    <style>
+      body { --bloom-accent: rgb(80, 130, 90); }
+      .fixture_cardLink:hover { background: rgb(220, 220, 220); }
+      .fixture_cardLink:active { background: rgb(200, 200, 200); }
+      .fixture_cardOpen:focus-visible { outline: 2px solid blue; }
+      .fixture_groupSection + .fixture_groupSection { margin-top: 4px; }
+    </style>
+    <ul>
+      <li class="fixture_card fixture_cardLink" data-plugin-package="dsh-bloom-theme" data-plugin-status="installed">
+        <button class="fixture_cardOpen">Open plugin</button>
+      </li>
+      <li class="fixture_cardLink" id="other">Other interactive row</li>
+    </ul>
+    <aside class="fixture_sidebarCol">
+      <div class="fixture_groupSection">Workspace one</div>
+      <div class="fixture_groupSection">Workspace two</div>
+    </aside>
+  `)
+  const pluginRow = page.locator('[data-plugin-package]')
+  const workspaceGroups = page.locator('.fixture_groupSection')
+  const groupGap = () => workspaceGroups.evaluateAll(([first, second]) =>
+    second.getBoundingClientRect().top - first.getBoundingClientRect().bottom)
+  const background = locator => locator.evaluate(node => getComputedStyle(node).backgroundColor)
+
+  await pluginRow.hover()
+  assert.equal(await background(pluginRow), 'rgb(220, 220, 220)')
+  const nativeGap = await groupGap()
+  assert.equal(nativeGap, 4)
+
+  await page.addStyleTag({ content: css })
+  await page.evaluate(() => { document.body.dataset.bloomVariant = 'mist' })
+  await page.keyboard.press('Tab')
+  const pluginButton = pluginRow.getByRole('button')
+  assert.ok(await pluginButton.evaluate(node => node.matches(':focus-visible') && getComputedStyle(node).outlineStyle === 'solid'))
+
+  for (const dark of [false, true]) {
+    await page.evaluate(dark => document.body.toggleAttribute('data-ds-dark-theme', dark), dark)
+    assert.equal(await groupGap(), nativeGap)
+    await pluginRow.hover()
+    assert.equal(await background(pluginRow), 'rgba(0, 0, 0, 0)')
+    await page.mouse.down()
+    assert.equal(await background(pluginRow), 'rgb(200, 200, 200)')
+    await page.mouse.up()
+    const other = page.locator('#other')
+    await other.hover()
+    assert.equal(await background(other), 'rgb(220, 220, 220)')
+  }
+})

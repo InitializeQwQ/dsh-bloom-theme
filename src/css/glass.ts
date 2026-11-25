@@ -431,6 +431,11 @@ body[data-bloom-variant] [data-plugin-bar][data-compact]::before {
   mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.7) 70%, transparent 100%);
 }
 
+/* 插件列表保留点击和键盘焦点反馈，悬停时去掉整行底色。 */
+body[data-bloom-variant] li[data-plugin-package][data-plugin-status]:hover:not(:active) {
+  background-color: transparent;
+}
+
 /* ═══ dshmarket 吸顶搜索区：实底色带 → 毛玻璃（#136）══════════════
    dshmarket 的吸顶搜索头（_head）、分类条（_cats）、全屏态吸顶头
    （_stickyHead）都铺 background: var(--dsw-alias-bg-base) 实底，用来

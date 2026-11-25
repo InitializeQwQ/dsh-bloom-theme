@@ -700,11 +700,6 @@ body {
 }
 [class*="_sidebarCol"] [role="treeitem"]:active { transform: scale(0.996); }
 
-/* [LES-02] 侧栏分组：去硬边框，紧凑 6px 留白避免工作区列表过度稀疏 */
-[class*="_sidebarCol"] [class*="_groupSection"] + [class*="_groupSection"] {
-  margin-top: 6px;
-}
-
 /* 会话行：圆角 + hover 淡染，靠留白区分，不描边不画网格 */
 [class*="_sidebarCol"] [class*="_sessionRow"] {
   position: relative;
