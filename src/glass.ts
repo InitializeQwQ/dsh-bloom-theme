@@ -10,6 +10,9 @@ export type EffectiveGlassMode = GlassMaterial | 'solid'
 
 const KEY = `${STORAGE_KEY}-glass-mode`
 const COMPOSER_TRANSPARENCY_KEY = `${STORAGE_KEY}-composer-transparent`
+const COMPOSER_TINT_KEY = `${STORAGE_KEY}-composer-tint`
+export const COMPOSER_TINTS = [30, 50, 70] as const
+export type ComposerTint = typeof COMPOSER_TINTS[number]
 
 /** 面板选项：毛玻璃、磨砂玻璃、液态玻璃。 */
 export const GLASS_MODES: GlassMaterial[] = ['frosted', 'matte', 'liquid']
@@ -17,6 +20,7 @@ export const GLASS_MODES: GlassMaterial[] = ['frosted', 'matte', 'liquid']
 let cached: GlassMode | undefined
 let needsMigration = false
 let composerTransparent: boolean | undefined
+let composerTint: ComposerTint | undefined
 
 /** Existing profiles keep the glass input surface until the user switches it off. */
 export function readComposerTransparency(): boolean {
@@ -30,8 +34,26 @@ export function readComposerTransparency(): boolean {
   return composerTransparent
 }
 
+export function readComposerTint(): ComposerTint {
+  if (composerTint === undefined) {
+    composerTint = 50
+    try {
+      const value = Number(localStorage.getItem(COMPOSER_TINT_KEY))
+      composerTint = COMPOSER_TINTS.find(level => level === value) ?? 50
+    } catch {}
+  }
+  return composerTint
+}
+
 export function applyComposerTransparency(): void {
   document.body.toggleAttribute('data-bloom-composer-opaque', !readComposerTransparency())
+  document.body.dataset.bloomComposerTint = String(readComposerTint())
+}
+
+export function writeComposerTint(value: ComposerTint): void {
+  composerTint = value
+  try { localStorage.setItem(COMPOSER_TINT_KEY, String(value)) } catch {}
+  applyComposerTransparency()
 }
 
 export function writeComposerTransparency(transparent: boolean): void {

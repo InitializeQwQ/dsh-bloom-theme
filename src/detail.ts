@@ -93,6 +93,9 @@ import { applyMotion, readMotion } from './dom.js'
 import {
   effectiveGlassMode,
   GLASS_MODES,
+  COMPOSER_TINTS,
+  readComposerTint,
+  writeComposerTint,
   readComposerTransparency,
   readGlassMode,
   writeComposerTransparency,
@@ -169,12 +172,14 @@ export function buildDetailRowsHTML(): string {
   const meteorSpeed = readMeteorSpeed()
   const motionOn = readMotion()
   const transparencyLabel = tr('输入框透明')
+  const tint = readComposerTint()
 
   return `${groupTitle(tr('质感'))}
     <div class="dsh-bloom-group__body">
       ${row('glass', tr('材质'), `<span class="dsh-bloom-icon-seg" role="radiogroup" aria-label="${tr('质感')}">${glassChoices}</span>`)}
       <p class="dsh-bloom-hint" data-glass-hint hidden></p>
       ${row('input', transparencyLabel, `<button type="button" class="dsh-bloom-composer-switch" role="switch" aria-label="${transparencyLabel}" aria-checked="${readComposerTransparency()}" data-composer-transparency></button>`)}
+      ${row('input', tr('输入框颜色深浅'), `<select class="dsh-bloom-rotation__select" data-composer-tint aria-label="${tr('输入框颜色深浅')}">${COMPOSER_TINTS.map(level => `<option value="${level}"${level === tint ? ' selected' : ''}>${tr(level === 30 ? '浅' : level === 50 ? '适中' : '深')}</option>`).join('')}</select>`)}
     </div>
     ${groupTitle(tr('背景'))}
     <div class="dsh-bloom-group__body">
@@ -241,7 +246,14 @@ function buildAboutHTML(): string {
  */
 export function bindDetailEvents(el: HTMLElement): () => void {
   const onChange = (e: Event) => {
-    const control = (e.target as HTMLElement).closest<HTMLSelectElement>('.dsh-bloom-rotation__select')
+    const target = e.target as HTMLElement
+    const tintControl = target.closest<HTMLSelectElement>('[data-composer-tint]')
+    if (tintControl) {
+      const tint = COMPOSER_TINTS.find(level => level === Number(tintControl.value))
+      if (tint !== undefined) writeComposerTint(tint)
+      return
+    }
+    const control = target.closest<HTMLSelectElement>('.dsh-bloom-rotation__select')
     if (control) {
       setRotationMinutes(Number(control.value))
       return

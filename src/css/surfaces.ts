@@ -64,8 +64,15 @@ ${scope('::before')} {
   -webkit-backdrop-filter: var(--bloom-surface-filter);
 }
 /* 只减淡输入卡底色；保留文字、描边和其他玻璃面的原有配色。 */
-${ROOT}:not([data-bloom-composer-opaque]) div[class*="_composer"] div[class*="_card"]::before {
-  background-color: color-mix(in oklch, var(--bloom-surface-fill) 82%, transparent);
+@media screen and (not (prefers-contrast: more)) and (forced-colors: none) and (prefers-reduced-transparency: no-preference) {
+  ${ROOT}[data-bloom-composer-tint="30"] { --bloom-composer-strength: 64%; }
+  ${ROOT}[data-bloom-composer-tint="70"] { --bloom-composer-strength: 100%; }
+  ${ROOT} div[class*="_composer"] div[class*="_card"]::before {
+    background-color: color-mix(in oklch, var(--bloom-surface-fill) var(--bloom-composer-strength, 82%), var(--bloom-composer-mix-base, transparent));
+  }
+  ${ROOT}[data-bloom-composer-opaque] div[class*="_composer"] div[class*="_card"] {
+    --bloom-composer-mix-base: var(--dsw-alias-bg-base, var(--dsw-alias-bg-layer-1, #fff));
+  }
 }
 ${ROOT}[data-bloom-composer-opaque] div[class*="_composer"] div[class*="_card"] {
   --bloom-surface-fill: var(--dsw-alias-bg-layer-1, #fff);
