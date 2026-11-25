@@ -109,7 +109,7 @@ export function applyVariant(variant) {
     if (headName) headName.textContent = variantName(variant)
     const headDot = root.querySelector<HTMLElement>('.dsh-bloom-head__current .dsh-bloom-dot')
     if (headDot) headDot.setAttribute('style', dotStyle(variant))
-    if (inSettings) updatePaletteCaption(root, variant)
+    if (!inSettings) updatePaletteCaption(root, variant)
   }
   // View Transitions API（Chrome 111+/Edge/Safari TP）。
   // 不支持时降级为瞬时应用 —— 行为与改前一致，老浏览器照常工作。
@@ -166,6 +166,36 @@ async function shareInstall(btn: HTMLElement, schedule: (fn: () => void, delay: 
   return ok
 }
 
+function buildModeHTML(inSettings: boolean) {
+  return `<div class="dsh-bloom-section" data-mode-section hidden>${tr('模式')}</div>
+    <div class="dsh-bloom-appearance" role="group" aria-label="${tr('深浅模式')}" hidden>
+      <div class="dsh-bloom-appearance__seg">
+        <button type="button" class="dsh-bloom-appearance__btn" data-mode="light" aria-label="${tr('浅色')}" title="${tr('浅色')}">
+          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="3.1" fill="currentColor"/>
+            <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+              <path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1"/>
+            </g>
+          </svg>
+          ${inSettings ? `<span>${tr('浅色')}</span>` : ''}
+        </button>
+        <button type="button" class="dsh-bloom-appearance__btn" data-mode="dark" aria-label="${tr('深色')}" title="${tr('深色')}">
+          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M13.4 10.1A5.9 5.9 0 0 1 5.9 2.6a5.9 5.9 0 1 0 7.5 7.5z" fill="currentColor"/>
+          </svg>
+          ${inSettings ? `<span>${tr('深色')}</span>` : ''}
+        </button>
+        <button type="button" class="dsh-bloom-appearance__btn" data-mode="system" aria-label="${tr('跟随系统')}" title="${tr('跟随系统')}">
+          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
+            <rect x="1.6" y="2.6" width="12.8" height="8.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M5.6 13.4h4.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          ${inSettings ? `<span>${tr('跟随系统')}</span>` : ''}
+        </button>
+      </div>
+    </div>`
+}
+
 let switcherSerial = 0
 export function buildSwitcherHTML(currentVariant, inSettings = false) {
   const sharePanelId = `dsh-bloom-share-${++switcherSerial}`
@@ -175,30 +205,19 @@ export function buildSwitcherHTML(currentVariant, inSettings = false) {
     ? FEATURED_VARIANTS : [currentVariant, ...FEATURED_VARIANTS]
   const options = shown.map((v) => {
     const on = v === currentVariant
-    // 主题行改成「纯色板」网格（2026-11-21 · owner：
-    // 「下拉框的主面板不应该用这种文字型的；能用图标交互布局解决的，
-    // 就不要通过文字的形式去解决，太重了」）。
-    //
-    // 原来每行是「色块 + 名字 + 整句英文诗」——15 个变体把面板撑到 744px 高，
-    // 文字占满整列。现在变体只留一个色块，名字与诗进 aria-label / tooltip
-    // （tooltip 与 aria-label 二选一即可，这里两者都给，键盘与鼠标都能读到）；
-    // 当前变体的名字已经在面板头部（Appearance [● Mist]）显示，不必重复。
-    //
-    // 2026-11-21 二轮（owner：「颜色块也可以做得好看一点」「是不是可以有一两个字，
-    // 比如国风的字」「横版色块浮动上去是不是应该有这个颜色的描述」）：
-    //   ① 色块加国风单字印记（黛/朱/桃/天…）—— 一眼分辨是哪种配色
-    //   ② hover 描述：不是浮在色块上的小气泡，而是网格下方一行共用字幕
-    //      （hover/focus 某格 → 那行显示该配色的名字与诗）。
-    //      为什么不用气泡：面板自身 overflow-y:auto（见 CSS 注释），任何
-    //      超出面板宽度的浮层都会被裁掉；40px 的格子也放不下「Tangerine +
-    //      最是橙黄橘绿时」。共用字幕位置恒定、宽度够、不会被裁。
-    // 单字是 aria-hidden 的装饰；名字与诗仍由 aria-label 承担语义。
-    const label = `${variantName(v)} · ${variantPoem(v)}`
+    const name = escapeHTML(variantName(v))
+    const poem = escapeHTML(variantPoem(v))
+    const label = `${name} · ${poem}`
+    const preview = inSettings
+      ? `<span class="dsh-bloom-option__dot" style="${swatchStyle(v)}" aria-hidden="true"></span>
+        <span class="dsh-bloom-option__text"><span class="dsh-bloom-option__name">${name}</span>
+          <span class="dsh-bloom-option__poem">${poem}</span></span>`
+      : `<span class="dsh-bloom-option__swatch" style="${swatchStyle(v)}" aria-hidden="true">
+        <span class="dsh-bloom-option__glyph">${variantGlyph(v)}</span></span>
+        <span class="dsh-bloom-check" aria-hidden="true">✓</span>`
     return `<button type="button" class="dsh-bloom-option" role="option" data-variant="${v}"` +
       ` aria-selected="${on}" data-active="${on}" tabindex="${inSettings && on ? 0 : -1}" aria-label="${label}" title="${label}">` +
-      `<span class="dsh-bloom-option__swatch" style="${swatchStyle(v)}" aria-hidden="true">` +
-      `<span class="dsh-bloom-option__glyph">${variantGlyph(v)}</span></span>` +
-      `<span class="dsh-bloom-check" aria-hidden="true">✓</span>` +
+      preview +
       `${isNewVariant(v, PLUGIN_VERSION) ? `<span class="dsh-bloom-option__new" aria-hidden="true"></span>` : ''}</button>`
   }).join('')
   return `<div class="dsh-bloom-switcher" data-plugin="${PLUGIN_ID}"${inSettings ? ' data-placement="settings"' : ''}>
@@ -209,42 +228,19 @@ export function buildSwitcherHTML(currentVariant, inSettings = false) {
       <path d="M2 4l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>`}
+  ${inSettings ? `<section class="dsh-bloom-mode" lang="${getLang()}" aria-label="${tr('模式')}">${buildModeHTML(true)}</section>` : ''}
   <div class="dsh-bloom-menu" lang="${getLang()}" role="${inSettings ? 'group' : 'dialog'}" aria-label="${tr('Bloom 外观设置')}"${inSettings ? '' : ' hidden'}>
     <div class="dsh-bloom-head">
-      <span class="dsh-bloom-head__title">${tr('外观')}</span>
-      <span class="dsh-bloom-head__current">
+      <span class="dsh-bloom-head__title">${inSettings ? tr('配色') : tr('外观')}</span>
+      ${inSettings ? '' : `<span class="dsh-bloom-head__current">
         <span class="dsh-bloom-dot" style="${dotStyle(currentVariant)}"></span>
         <span data-head-name>${variantName(currentVariant)}</span>
       </span>
-      ${inSettings ? '' : `<button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>`}
+      <button type="button" class="dsh-bloom-close" aria-label="${tr('关闭')}">✕</button>`}
     </div>
-    <div class="dsh-bloom-section">${tr('主题')}</div>
-    <div class="dsh-bloom-options" role="listbox" aria-label="${tr('配色')}">${options}</div>
-    <div class="dsh-bloom-caption" data-caption role="status" aria-live="polite"><span class="dsh-bloom-caption__name" data-caption-name>${variantName(currentVariant)}</span><span class="dsh-bloom-caption__poem" data-caption-poem>${variantPoem(currentVariant)}</span></div>
-    <div class="dsh-bloom-section" data-mode-section hidden>${tr('模式')}</div>
-    <div class="dsh-bloom-appearance" role="group" aria-label="${tr('深浅模式')}" hidden>
-      <div class="dsh-bloom-appearance__seg">
-        <button type="button" class="dsh-bloom-appearance__btn" data-mode="light" aria-label="${tr('浅色')}" title="${tr('浅色')}">
-          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="3.1" fill="currentColor"/>
-            <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
-              <path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1"/>
-            </g>
-          </svg>
-        </button>
-        <button type="button" class="dsh-bloom-appearance__btn" data-mode="dark" aria-label="${tr('深色')}" title="${tr('深色')}">
-          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M13.4 10.1A5.9 5.9 0 0 1 5.9 2.6a5.9 5.9 0 1 0 7.5 7.5z" fill="currentColor"/>
-          </svg>
-        </button>
-        <button type="button" class="dsh-bloom-appearance__btn" data-mode="system" aria-label="${tr('跟随系统')}" title="${tr('跟随系统')}">
-          <svg class="dsh-bloom-appearance__icon" viewBox="0 0 16 16" aria-hidden="true">
-            <rect x="1.6" y="2.6" width="12.8" height="8.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M5.6 13.4h4.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-    </div>
+    ${inSettings ? '' : `<div class="dsh-bloom-section">${tr('主题')}</div>`}
+    <div class="dsh-bloom-options${inSettings ? ' dsh-bloom-settings-palette' : ''}" role="listbox" aria-label="${tr('配色')}">${options}</div>
+    ${inSettings ? '' : `<div class="dsh-bloom-caption" data-caption role="status" aria-live="polite"><span class="dsh-bloom-caption__name" data-caption-name>${variantName(currentVariant)}</span><span class="dsh-bloom-caption__poem" data-caption-poem>${variantPoem(currentVariant)}</span></div>${buildModeHTML(false)}`}
     ${inSettings ? '' : `<div class="dsh-bloom-settings-hint" role="note">${tr('质感、背景、流星与动效在 设置 › Bloom 外观 中调整')}</div>`}
     <div class="dsh-bloom-more-body" hidden data-open="false" data-instant="true">
       <div class="dsh-bloom-more-inner">
@@ -376,6 +372,8 @@ function rerenderMenu(el: HTMLElement, variant: string) {
     fresh.hidden = cur.hidden
     cur.replaceWith(fresh)
   }
+  const freshMode = holder.querySelector('.dsh-bloom-mode')
+  if (freshMode) el.querySelector('.dsh-bloom-mode')?.replaceWith(freshMode)
   if (moreWasOpen) {
     const more = el.querySelector<HTMLElement>('.dsh-bloom-more')
     const body = el.querySelector<HTMLElement>('.dsh-bloom-more-body')
@@ -668,22 +666,14 @@ export function buildSwitcherEl(initialVariant, inSettings = false) {
     }
   })
 
-  // 配色网格下方的共用字幕：hover / 键盘 focus 某个色块时显示它的名字与诗。
-  // 2026-11-21（owner「横版色块浮动上去是不是应该有这个颜色的描述」）：
-  // 原来做成色块内浮层，但 40px 的格子放不下名字，文字被截成 "Tan…"；
-  // 改成网格下方一行字幕后，位置恒定、宽度够、不与色块抢视线。
-  const syncCaption = (variant: string | undefined) => {
-    if (!variant) return
-    updatePaletteCaption(el, variant)
+  if (!inSettings) {
+    const previewPalette = (event: Event) => {
+      const option = (event.target as HTMLElement).closest<HTMLElement>('.dsh-bloom-option')
+      if (option?.dataset.variant) updatePaletteCaption(el, option.dataset.variant)
+    }
+    el.addEventListener('pointerover', previewPalette)
+    el.addEventListener('focusin', previewPalette)
   }
-  el.addEventListener('pointerover', (e) => {
-    const opt = (e.target as HTMLElement).closest<HTMLElement>('.dsh-bloom-option')
-    syncCaption(opt?.dataset.variant)
-  })
-  el.addEventListener('focusin', (e) => {
-    const opt = (e.target as HTMLElement).closest<HTMLElement>('.dsh-bloom-option')
-    syncCaption(opt?.dataset.variant)
-  })
 
   el.addEventListener('click', (e) => {
     const target = e.target as HTMLElement

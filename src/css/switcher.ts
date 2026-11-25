@@ -201,10 +201,10 @@ export const SWITCHER_CSS = `
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 420px;
+  max-width: 560px;
   min-width: 0;
 }
-.dsh-bloom-switcher[data-placement="settings"] { display: block; }
+.dsh-bloom-switcher[data-placement="settings"] { display: grid; gap: 10px; }
 .dsh-bloom-switcher[data-placement="settings"] .dsh-bloom-menu {
   position: relative;
   top: auto;
@@ -638,6 +638,82 @@ body[data-ds-dark-theme] .dsh-bloom-option__swatch {
 .dsh-bloom-appearance__btn:focus-visible {
   outline: 2px solid var(--bloom-accent, #6b8f71);
   outline-offset: -2px;
+}
+
+/* 设置页配色卡：色点、名称与诗句始终可见。 */
+.dsh-bloom-settings-palette {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+  padding-inline: 14px;
+}
+.dsh-bloom-settings-palette .dsh-bloom-option {
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 48px;
+  aspect-ratio: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--bloom-hairline));
+}
+.dsh-bloom-settings-palette .dsh-bloom-option[data-active="true"] {
+  border-color: var(--bloom-accent, Highlight);
+  background: color-mix(in oklch, var(--bloom-accent, Highlight) 9%, transparent);
+}
+.dsh-bloom-option__dot {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--bloom-swatch-b);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14);
+}
+body[data-ds-dark-theme] .dsh-bloom-option__dot { background: var(--bloom-swatch-bd); }
+.dsh-bloom-option__text { display: grid; gap: 2px; min-width: 0; line-height: 1.3; }
+.dsh-bloom-option__name { font-size: 13px; font-weight: 600; }
+.dsh-bloom-option__poem {
+  overflow: hidden;
+  color: var(--dsw-alias-label-secondary, #666);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dsh-bloom-mode {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--bloom-hairline);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-2);
+}
+.dsh-bloom-mode > .dsh-bloom-section,
+.dsh-bloom-mode > .dsh-bloom-appearance { padding: 0; }
+.dsh-bloom-mode > .dsh-bloom-section {
+  color: var(--dsw-alias-label-primary, #222);
+  font-size: 14px;
+  font-weight: 600;
+}
+.dsh-bloom-mode .dsh-bloom-appearance__seg { box-sizing: border-box; }
+.dsh-bloom-mode .dsh-bloom-appearance__btn {
+  flex-wrap: wrap;
+  gap: 4px 5px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 5px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.dsh-bloom-mode .dsh-bloom-appearance__icon { flex: none; }
+@media (pointer: coarse) {
+  .dsh-bloom-mode .dsh-bloom-appearance__btn { min-height: 44px; }
+}
+@media (forced-colors: active) {
+  .dsh-bloom-option__dot { forced-color-adjust: none; }
+  .dsh-bloom-settings-palette .dsh-bloom-option[data-active="true"],
+  .dsh-bloom-mode .dsh-bloom-appearance__btn[data-active="true"] {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
 }
 
 /* 氛围分段：深浅各一行，只显示与宿主当前深浅一致的那行 */
