@@ -23,6 +23,7 @@ main { width:748px; padding:20px; }
 .fixture_trigger { background:var(--dsw-alias-turn-trigger-bg,var(--dsw-alias-markdown-code-block)); }
 .fixture_trigger:hover { background:var(--dsw-alias-turn-trigger-bg-hover,var(--dsw-alias-interactive-bg-hover)); }
 .fixture_card.fixture_preview { background:var(--dsw-alias-bg-layer-1); padding:10px; }
+.fixture_terminal { border:1px solid rgb(110,110,110); padding:4px; }
 header.fixture_header { height:40px; }
 #plugins { padding:10px; }
 #preview { position:fixed; left:580px; top:30px; width:250px; }
@@ -38,6 +39,14 @@ const html = `<main>
 <div class="fixture_reasoning" data-variant="think" data-expanded><div data-open><button id="reasoning" data-disclosure-header>Thinking</button><div>Reasoning details</div></div></div>
 <div id="trigger" class="fixture_trigger" data-turn-trigger>Turn trigger</div>
 <div id="preview" class="fixture_card fixture_preview"><pre>File change preview</pre></div>
+<div class="fixture_scrollBody">
+  <div id="command-summary" class="fixture_card"><div data-sample="bash" role="button" aria-expanded="false">Run command</div></div>
+  <div id="command-detail" class="fixture_card"><div data-sample="bash" role="button" aria-expanded="true">Run command</div><div class="fixture_terminal"><pre>Example output</pre></div></div>
+  <div id="code-detail" class="fixture_card"><pre>Example code</pre></div>
+  <div id="tool-row" class="fixture_toolRow">Tool results</div>
+  <div id="tool-changes" class="fixture_toolChanges">Tool changes</div>
+  <div id="ordinary-hover-card" class="fixture_card">Ordinary message card</div>
+</div>
 <div id="unrelated" class="fixture_card">Ordinary card</div>
 <aside class="fixture_sidebarCol" style="width:220px"><div id="sidelist" class="fixture_list" style="overflow:auto;height:90px">${'<div role="treeitem" style="width:100%;height:30px">Session row</div>'.repeat(4)}</div></aside>
 </main>`
@@ -72,6 +81,16 @@ test('host table branches and themed surfaces survive hover, focus, and palette 
     const geometry = ({ width, height, table, paddingBottom, overflow, gutter, maxScroll }) =>
       ({ width, height, table, paddingBottom, overflow, gutter, maxScroll })
     const native = await page.evaluate(measure)
+    const details = ['#command-summary', '#command-detail', '#code-detail', '#tool-row', '#tool-changes']
+    const hoverSurface = async selector => {
+      await page.hover(selector)
+      return page.locator(selector).evaluate(el => {
+        const style = getComputedStyle(el)
+        return { background: style.backgroundColor, shadow: style.boxShadow }
+      })
+    }
+    const nativeDetails = []
+    for (const selector of details) nativeDetails.push(await hoverSurface(selector))
     await page.hover('#wide')
     const nativeHover = await page.evaluate(measure)
     await page.mouse.move(1100, 700)
@@ -90,8 +109,8 @@ test('host table branches and themed surfaces survive hover, focus, and palette 
   assert.equal(before.pluginShadow, 'none', 'Plugins tabs do not inherit conversation shadow');
   assert.equal(before.pluginBackdrop, 'none');
   assert.notEqual(before.chatShadow, 'none', 'conversation tabs retain their surface');
-  assert.notEqual(before.reasoning, 'rgb(24, 26, 30)', 'sticky header replaces native bg-base');
-  assert.equal(before.reasoningPosition, 'sticky');
+  assert.equal(before.reasoning, native.reasoning, 'expanded reasoning uses the native background');
+  assert.equal(before.reasoningPosition, native.reasoningPosition);
   await page.hover('#wide');
   const hovered = await page.evaluate(measure);
   assert.deepEqual(geometry(hovered.wide), geometry(nativeHover.wide), 'hover follows the native scrolling and padding');
@@ -108,9 +127,14 @@ test('host table branches and themed surfaces survive hover, focus, and palette 
   const preview = await page.evaluate(measure);
   assert.equal(preview.preview, before.preview, 'diff preview stays opaque on hover');
   assert.equal(preview.previewImage, 'none');
-  await page.evaluate(() => {document.body.dataset.dsDarkTheme='';document.body.dataset.bloomVariant='cinnabar';document.body.style.setProperty('--dsw-alias-bg-layer-1','rgb(40,30,30)');document.body.style.setProperty('--bloom-accent','rgb(190,100,80)');document.body.style.setProperty('--bloom-morandi','190,100,80');});
+  for (const [index, selector] of details.entries()) {
+    assert.deepEqual(await hoverSurface(selector), nativeDetails[index], `${selector} retains its native hover surface`);
+  }
+  assert.equal(await page.locator('#command-detail .fixture_terminal').evaluate(el => getComputedStyle(el).borderTopWidth), '1px');
+  assert.match((await hoverSurface('#ordinary-hover-card')).shadow, /inset/);
+  await page.evaluate(() => {document.body.dataset.dsDarkTheme='';document.body.dataset.bloomVariant='cinnabar';document.body.style.setProperty('--dsw-alias-bg-base','rgb(28,24,26)');document.body.style.setProperty('--dsw-alias-bg-layer-1','rgb(40,30,30)');document.body.style.setProperty('--bloom-accent','rgb(190,100,80)');document.body.style.setProperty('--bloom-morandi','190,100,80');});
   const switched = await page.evaluate(measure);
-  assert.notEqual(switched.reasoning, before.reasoning, 'reasoning follows switched palette');
+  assert.equal(switched.reasoning, 'rgb(28, 24, 26)', 'reasoning follows the host base color after a theme change');
   assert.notEqual(switched.trigger, before.trigger, 'trigger follows switched palette');
   assert.equal(switched.preview, 'rgb(40, 30, 30)', 'hover preview follows dark surface');
   await page.hover('#trigger');
